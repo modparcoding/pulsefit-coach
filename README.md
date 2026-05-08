@@ -1,21 +1,24 @@
-# PulseFit Coach
+# PulseFit Coach MVP
 
-A mobile-friendly fitness coaching and monitoring app.
+A mobile-first fitness coaching app that feels like a calm personal trainer who remembers.
 
-## What it does
+## Current Build Stage
 
-- Pick a goal and generate a weekly workout plan.
-- Browse coaching sessions by strength, conditioning, or recovery.
-- Select workouts and log completed sessions.
-- Track weekly minutes, session count, and training load over time.
-- Copy a concise progress summary.
+This branch is a clean React + Vite rebuild based on the full MVP specification.
+
+Implemented foundation:
+
+- React + Vite + TypeScript
+- Tailwind via the official Vite plugin
+- React Router shell
+- Core domain types
+- Repository interface
+- LocalStorage repository with schema versioning, export, and import
+- Unit tests for the repository layer
 
 ## Run locally
 
-Open `index.html` in a browser, or serve the folder locally:
-
 ```bash
-python3 -m http.server 5173
+npm install
+npm run dev
 ```
-
-Then visit `http://localhost:5173`.
