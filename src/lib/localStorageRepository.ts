@@ -46,19 +46,30 @@ export class LocalStorageRepository implements Repository {
     }
   }
 
-  async listSessions(options: { limit?: number; since?: string } = {}): Promise<WorkoutSession[]> {
+  async listSessions(
+    options: { limit?: number; since?: string } = {},
+  ): Promise<WorkoutSession[]> {
     const ids = this.read<string[]>(STORAGE_KEYS.sessionsIndex, []);
     const sessions = ids
-      .map((id) => this.read<WorkoutSession | null>(STORAGE_KEYS.session(id), null))
+      .map((id) =>
+        this.read<WorkoutSession | null>(STORAGE_KEYS.session(id), null),
+      )
       .filter((session): session is WorkoutSession => Boolean(session))
       .filter((session) => !options.since || session.startedAt >= options.since)
       .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 
-    return typeof options.limit === "number" ? sessions.slice(0, options.limit) : sessions;
+    return typeof options.limit === "number"
+      ? sessions.slice(0, options.limit)
+      : sessions;
   }
 
-  async getProgressionState(exerciseId: string): Promise<ExerciseProgressionState | null> {
-    return this.read<ExerciseProgressionState>(STORAGE_KEYS.progression(exerciseId), null);
+  async getProgressionState(
+    exerciseId: string,
+  ): Promise<ExerciseProgressionState | null> {
+    return this.read<ExerciseProgressionState>(
+      STORAGE_KEYS.progression(exerciseId),
+      null,
+    );
   }
 
   async saveProgressionState(state: ExerciseProgressionState): Promise<void> {
@@ -67,13 +78,16 @@ export class LocalStorageRepository implements Repository {
 
   async saveBodyMetric(metric: BodyMetric): Promise<void> {
     const metrics = this.read<BodyMetric[]>(STORAGE_KEYS.bodyMetrics, []);
-    const next = [metric, ...metrics.filter((item) => item.id !== metric.id)].sort((a, b) =>
-      b.date.localeCompare(a.date),
-    );
+    const next = [
+      metric,
+      ...metrics.filter((item) => item.id !== metric.id),
+    ].sort((a, b) => b.date.localeCompare(a.date));
     this.write(STORAGE_KEYS.bodyMetrics, next);
   }
 
-  async listBodyMetrics(options: { since?: string } = {}): Promise<BodyMetric[]> {
+  async listBodyMetrics(
+    options: { since?: string } = {},
+  ): Promise<BodyMetric[]> {
     return this.read<BodyMetric[]>(STORAGE_KEYS.bodyMetrics, []).filter(
       (metric) => !options.since || metric.date >= options.since,
     );
@@ -81,13 +95,16 @@ export class LocalStorageRepository implements Repository {
 
   async saveCheckIn(checkIn: DailyCheckIn): Promise<void> {
     const checkIns = this.read<DailyCheckIn[]>(STORAGE_KEYS.checkIns, []);
-    const next = [checkIn, ...checkIns.filter((item) => item.id !== checkIn.id)].sort((a, b) =>
-      b.date.localeCompare(a.date),
-    );
+    const next = [
+      checkIn,
+      ...checkIns.filter((item) => item.id !== checkIn.id),
+    ].sort((a, b) => b.date.localeCompare(a.date));
     this.write(STORAGE_KEYS.checkIns, next);
   }
 
-  async listCheckIns(options: { since?: string } = {}): Promise<DailyCheckIn[]> {
+  async listCheckIns(
+    options: { since?: string } = {},
+  ): Promise<DailyCheckIn[]> {
     return this.read<DailyCheckIn[]>(STORAGE_KEYS.checkIns, []).filter(
       (checkIn) => !options.since || checkIn.date >= options.since,
     );
@@ -96,15 +113,22 @@ export class LocalStorageRepository implements Repository {
   async exportAll(): Promise<string> {
     const sessions = await this.listSessions();
     const progression = sessions
-      .flatMap((session) => session.exerciseResults.map((result) => result.exerciseId))
+      .flatMap((session) =>
+        session.exerciseResults.map((result) => result.exerciseId),
+      )
       .filter((exerciseId, index, all) => all.indexOf(exerciseId) === index)
       .map((exerciseId) =>
-        this.read<ExerciseProgressionState | null>(STORAGE_KEYS.progression(exerciseId), null),
+        this.read<ExerciseProgressionState | null>(
+          STORAGE_KEYS.progression(exerciseId),
+          null,
+        ),
       )
       .filter((state): state is ExerciseProgressionState => Boolean(state));
 
     const payload: ExportPayload = {
-      meta: this.read<StorageMeta>(STORAGE_KEYS.meta, { schemaVersion: CURRENT_SCHEMA_VERSION }),
+      meta: this.read<StorageMeta>(STORAGE_KEYS.meta, {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+      }),
       profile: await this.getProfile(),
       sessions,
       progression,
@@ -121,6 +145,7 @@ export class LocalStorageRepository implements Repository {
   }
 
   async importAll(json: string): Promise<void> {
+    await this.clearAll();
     const payload = JSON.parse(json) as Partial<ExportPayload>;
     this.write(STORAGE_KEYS.meta, {
       schemaVersion: payload.meta?.schemaVersion ?? CURRENT_SCHEMA_VERSION,
@@ -140,6 +165,16 @@ export class LocalStorageRepository implements Repository {
 
     this.write(STORAGE_KEYS.bodyMetrics, payload.bodyMetrics ?? []);
     this.write(STORAGE_KEYS.checkIns, payload.checkIns ?? []);
+  }
+
+  async clearAll(): Promise<void> {
+    const keysToRemove: string[] = [];
+    for (let index = 0; index < this.storage.length; index += 1) {
+      const key = this.storage.key(index);
+      if (key?.startsWith("fc:")) keysToRemove.push(key);
+    }
+    keysToRemove.forEach((key) => this.storage.removeItem(key));
+    this.ensureMeta();
   }
 
   private ensureMeta(): void {

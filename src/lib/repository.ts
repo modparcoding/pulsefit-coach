@@ -12,9 +12,14 @@ export interface Repository {
 
   getSession(id: string): Promise<WorkoutSession | null>;
   saveSession(session: WorkoutSession): Promise<void>;
-  listSessions(options?: { limit?: number; since?: string }): Promise<WorkoutSession[]>;
+  listSessions(options?: {
+    limit?: number;
+    since?: string;
+  }): Promise<WorkoutSession[]>;
 
-  getProgressionState(exerciseId: string): Promise<ExerciseProgressionState | null>;
+  getProgressionState(
+    exerciseId: string,
+  ): Promise<ExerciseProgressionState | null>;
   saveProgressionState(state: ExerciseProgressionState): Promise<void>;
 
   saveBodyMetric(metric: BodyMetric): Promise<void>;
@@ -25,6 +30,7 @@ export interface Repository {
 
   exportAll(): Promise<string>;
   importAll(json: string): Promise<void>;
+  clearAll(): Promise<void>;
 }
 
 export interface StorageMeta {

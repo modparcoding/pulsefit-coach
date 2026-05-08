@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { BodyMetric, DailyCheckIn, UserProfile, WorkoutSession } from "../types";
+import type {
+  BodyMetric,
+  DailyCheckIn,
+  UserProfile,
+  WorkoutSession,
+} from "../types";
 import { LocalStorageRepository } from "./localStorageRepository";
 
 const profile: UserProfile = {
@@ -73,8 +78,16 @@ describe("LocalStorageRepository", () => {
   });
 
   it("saves body metrics and check-ins", async () => {
-    const metric: BodyMetric = { id: "metric-1", date: "2026-05-08", bodyWeight: 70 };
-    const checkIn: DailyCheckIn = { id: "checkin-1", date: "2026-05-08", energy: 4 };
+    const metric: BodyMetric = {
+      id: "metric-1",
+      date: "2026-05-08",
+      bodyWeight: 70,
+    };
+    const checkIn: DailyCheckIn = {
+      id: "checkin-1",
+      date: "2026-05-08",
+      energy: 4,
+    };
 
     await repository.saveBodyMetric(metric);
     await repository.saveCheckIn(checkIn);
@@ -93,6 +106,15 @@ describe("LocalStorageRepository", () => {
 
     await expect(nextRepository.getProfile()).resolves.toEqual(profile);
     await expect(nextRepository.listSessions()).resolves.toEqual([session]);
+  });
+
+  it("clears all fitness coach data", async () => {
+    await repository.saveProfile(profile);
+    await repository.saveSession(session);
+    await repository.clearAll();
+
+    await expect(repository.getProfile()).resolves.toBeNull();
+    await expect(repository.listSessions()).resolves.toEqual([]);
   });
 });
 

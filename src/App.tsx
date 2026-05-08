@@ -111,7 +111,9 @@ export default function App() {
           <Route path="/library" element={<LibraryScreen />} />
           <Route
             path="/settings"
-            element={<SettingsScreen profile={profile} />}
+            element={
+              <SettingsScreen onProfileChange={setProfile} profile={profile} />
+            }
           />
         </Routes>
       </main>
@@ -1770,7 +1772,38 @@ function LibraryScreen() {
   );
 }
 
-function SettingsScreen({ profile }: { profile: UserProfile }) {
+function SettingsScreen({
+  onProfileChange,
+  profile,
+}: {
+  onProfileChange: (profile: UserProfile | null) => void;
+  profile: UserProfile;
+}) {
+  const [exportedData, setExportedData] = useState("");
+  const [importData, setImportData] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function exportData() {
+    setExportedData(await repository.exportAll());
+    setMessage("Export ready below.");
+  }
+
+  async function importBackup() {
+    try {
+      await repository.importAll(importData);
+      const nextProfile = await repository.getProfile();
+      onProfileChange(nextProfile);
+      setMessage("Import complete.");
+    } catch {
+      setMessage("That import did not look like a valid PulseFit backup.");
+    }
+  }
+
+  async function resetApp() {
+    await repository.clearAll();
+    onProfileChange(null);
+  }
+
   return (
     <section className="space-y-5">
       <header>
@@ -1796,6 +1829,71 @@ function SettingsScreen({ profile }: { profile: UserProfile }) {
             value={profile.equipment.gym ? "Standard gym" : "Not used"}
           />
         </dl>
+      </article>
+      <article className="space-y-4 rounded-lg border border-stone-200 bg-white p-4">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+            Data
+          </p>
+          <h2 className="mt-1 text-xl font-black">Backup and restore</h2>
+          <p className="mt-2 text-sm font-bold leading-6 text-stone-500">
+            Everything is stored on this device right now. Export before
+            changing browsers or clearing storage.
+          </p>
+        </div>
+        <button
+          className="min-h-12 w-full rounded-lg bg-emerald-900 px-4 font-black text-white"
+          onClick={exportData}
+          type="button"
+        >
+          Export data
+        </button>
+        {exportedData && (
+          <label className="block text-sm font-black text-stone-700">
+            Backup JSON
+            <textarea
+              className="mt-2 min-h-40 w-full rounded-lg border border-stone-200 p-3 font-mono text-xs"
+              readOnly
+              value={exportedData}
+            />
+          </label>
+        )}
+        <label className="block text-sm font-black text-stone-700">
+          Import JSON
+          <textarea
+            className="mt-2 min-h-32 w-full rounded-lg border border-stone-200 p-3 font-mono text-xs"
+            onChange={(event) => setImportData(event.target.value)}
+            placeholder="Paste a PulseFit export here"
+            value={importData}
+          />
+        </label>
+        <button
+          className="min-h-12 w-full rounded-lg bg-stone-200 px-4 font-black text-stone-700 disabled:opacity-50"
+          disabled={!importData.trim()}
+          onClick={importBackup}
+          type="button"
+        >
+          Import backup
+        </button>
+        {message && (
+          <p className="rounded-lg bg-stone-100 p-3 text-sm font-bold text-stone-600">
+            {message}
+          </p>
+        )}
+      </article>
+      <article className="space-y-3 rounded-lg border border-red-100 bg-red-50 p-4">
+        <h2 className="text-xl font-black text-red-950">Start over</h2>
+        <p className="text-sm font-bold leading-6 text-red-950">
+          This clears the local profile, sessions, metrics, and progression
+          cache on this device.
+        </p>
+        <button
+          className="min-h-12 w-full rounded-lg bg-red-900 px-4 font-black text-white"
+          onClick={resetApp}
+          type="button"
+        >
+          Reset app
+        </button>
       </article>
     </section>
   );
