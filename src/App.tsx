@@ -113,7 +113,10 @@ export default function App() {
             path="/progress"
             element={<ProgressScreen profile={profile} />}
           />
-          <Route path="/library" element={<LibraryScreen />} />
+          <Route
+            path="/library"
+            element={<LibraryScreen profile={profile} />}
+          />
           <Route
             path="/settings"
             element={
@@ -651,6 +654,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
   const templates = getTemplatesForProgram(program.id);
   const today = getTodayWorkout(profile, templates);
   const template = today.templateId ? getTemplate(today.templateId) : null;
+  const weeklyPlan = templates.slice(0, program.daysPerWeek);
   const contextOptions = [
     profile.equipment.home ? ("home" as const) : null,
     profile.equipment.gym ? ("gym" as const) : null,
@@ -799,6 +803,53 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
             No workout today. That is part of the plan, not a missed day.
           </p>
         )}
+      </section>
+
+      <section className="grid gap-3">
+        <div>
+          <h2 className="text-xl font-black">This week&apos;s plan</h2>
+          <p className="mt-1 text-sm font-bold leading-6 text-stone-500">
+            This is the order your coach will follow on your selected training
+            days.
+          </p>
+        </div>
+        {weeklyPlan.map((planTemplate, index) => {
+          const isToday = planTemplate.id === template?.id;
+          const exerciseNames = flattenTemplateExercises(planTemplate)
+            .slice(0, 3)
+            .map((plannedExercise) => getExercise(plannedExercise.exerciseId))
+            .filter((exercise): exercise is Exercise => Boolean(exercise))
+            .map((exercise) => exercise.name);
+
+          return (
+            <article
+              className={`rounded-lg border p-4 ${
+                isToday
+                  ? "border-emerald-900 bg-emerald-50"
+                  : "border-stone-200 bg-white"
+              }`}
+              key={planTemplate.id}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-wide text-stone-500">
+                    {scheduledDayForTemplate(profile, index)}
+                  </p>
+                  <h3 className="mt-1 font-black">{planTemplate.dayLabel}</h3>
+                </div>
+                <span className="rounded-md bg-white px-2 py-1 text-xs font-black text-stone-600">
+                  {planTemplate.estimatedMinutes} min
+                </span>
+              </div>
+              <p className="mt-2 text-sm font-bold leading-6 text-stone-600">
+                {exerciseNames.join(", ")}
+                {flattenTemplateExercises(planTemplate).length > 3
+                  ? ", ..."
+                  : ""}
+              </p>
+            </article>
+          );
+        })}
       </section>
     </section>
   );
@@ -1635,8 +1686,8 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
       .map((session) => session.templateId),
   );
   const latestSession = sessions[0];
-  const latestTemplate = latestSession
-    ? getTemplate(latestSession.templateId)
+  const latestSessionLabel = latestSession
+    ? sessionTemplateLabel(latestSession.templateId)
     : null;
   const filteredSessions = sessions
     .filter((session) => {
@@ -1652,7 +1703,7 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
     .filter((session) => {
       const query = sessionQuery.trim().toLowerCase();
       if (!query) return true;
-      const templateName = getTemplate(session.templateId)?.dayLabel ?? "";
+      const templateName = sessionTemplateLabel(session.templateId);
       const exerciseNames = session.exerciseResults
         .map(
           (result) => getExercise(result.exerciseId)?.name ?? result.exerciseId,
@@ -1664,6 +1715,14 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
     });
   const latestMetric = bodyMetrics[0];
   const latestCheckIn = checkIns[0];
+  const bodyWeightTrend = metricTrend(bodyMetrics, "bodyWeight", profile.units);
+  const waistTrend = metricTrend(bodyMetrics, "waist", profile.units);
+  const recentCheckIns = checkIns.filter(
+    (checkIn) => checkIn.date >= lastNDaysIsoDate(14),
+  );
+  const averageEnergy = averageMetric(recentCheckIns, "energy");
+  const averageSoreness = averageMetric(recentCheckIns, "soreness");
+  const averageSleep = averageMetric(recentCheckIns, "sleepHours");
 
   return (
     <section className="space-y-5">
@@ -1715,6 +1774,22 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
               ? `Energy ${latestCheckIn.energy ?? "-"} / soreness ${latestCheckIn.soreness ?? "-"}`
               : "Not logged"
           }
+        />
+        <InfoCard label="Bodyweight trend" value={bodyWeightTrend} />
+        <InfoCard label="Waist trend" value={waistTrend} />
+        <InfoCard
+          label="14-day energy"
+          value={averageEnergy ? `${averageEnergy}/5 avg` : "Not enough data"}
+        />
+        <InfoCard
+          label="14-day soreness"
+          value={
+            averageSoreness ? `${averageSoreness}/5 avg` : "Not enough data"
+          }
+        />
+        <InfoCard
+          label="14-day sleep"
+          value={averageSleep ? `${averageSleep}h avg` : "Not enough data"}
         />
       </div>
 
@@ -1842,8 +1917,7 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-black">
-                    {getTemplate(session.templateId)?.dayLabel ??
-                      session.templateId}
+                    {sessionTemplateLabel(session.templateId)}
                   </h3>
                   <p className="mt-1 text-sm font-bold text-stone-500">
                     {new Date(session.startedAt).toLocaleDateString()} ·{" "}
@@ -1865,6 +1939,24 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
                   ? ` · effort ${session.overallEffort}/10`
                   : ""}
               </p>
+              {session.exerciseResults.some(
+                (result) => result.substitutedFrom,
+              ) && (
+                <p className="mt-1 text-sm font-bold leading-6 text-orange-700">
+                  {
+                    session.exerciseResults.filter(
+                      (result) => result.substitutedFrom,
+                    ).length
+                  }{" "}
+                  equipment swap
+                  {session.exerciseResults.filter(
+                    (result) => result.substitutedFrom,
+                  ).length === 1
+                    ? ""
+                    : "s"}{" "}
+                  used
+                </p>
+              )}
               <p className="mt-1 text-sm leading-6 text-stone-600">
                 {sessionSetCount(session)} sets logged
                 {sessionVolume(session) > 0
@@ -1914,10 +2006,10 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
           </p>
         )}
       </section>
-      {latestTemplate && (
+      {latestSessionLabel && (
         <p className="rounded-lg bg-emerald-50 p-4 font-bold leading-7 text-emerald-950">
-          Last saved: {latestTemplate.dayLabel}. The next workout will use these
-          set logs for calmer weight and rep suggestions.
+          Last saved: {latestSessionLabel}. The next workout will use these set
+          logs for calmer weight and rep suggestions.
         </p>
       )}
       {selectedSession && (
@@ -1930,7 +2022,7 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
   );
 }
 
-function LibraryScreen() {
+function LibraryScreen({ profile }: { profile: UserProfile }) {
   const allExercises = Object.values(EXERCISES);
   const [query, setQuery] = useState("");
   const [movement, setMovement] = useState<MovementPattern | "all">("all");
@@ -1938,6 +2030,16 @@ function LibraryScreen() {
     "all",
   );
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
+    null,
+  );
+  const contextOptions = [
+    profile.equipment.home ? ("home" as const) : null,
+    profile.equipment.gym ? ("gym" as const) : null,
+  ].filter((item): item is "home" | "gym" => Boolean(item));
+  const [quickContext, setQuickContext] = useState<"home" | "gym">(
+    contextOptions[0] ?? "home",
+  );
+  const [quickTemplate, setQuickTemplate] = useState<WorkoutTemplate | null>(
     null,
   );
   const movementOptions = uniqueValues(
@@ -1958,6 +2060,17 @@ function LibraryScreen() {
         equipment === "all" || exercise.equipment.includes(equipment),
     );
 
+  if (quickTemplate) {
+    return (
+      <GuidedWorkout
+        context={quickContext}
+        onExit={() => setQuickTemplate(null)}
+        profile={profile}
+        template={quickTemplate}
+      />
+    );
+  }
+
   return (
     <section className="space-y-5">
       <header>
@@ -1970,6 +2083,24 @@ function LibraryScreen() {
           for setup, cues, mistakes, and safety notes.
         </p>
       </header>
+      {contextOptions.length > 1 && (
+        <div className="grid grid-cols-2 gap-2 rounded-lg bg-stone-100 p-1">
+          {contextOptions.map((option) => (
+            <button
+              className={`min-h-11 rounded-md font-black capitalize ${
+                quickContext === option
+                  ? "bg-white text-emerald-950 shadow-sm"
+                  : "text-stone-500"
+              }`}
+              key={option}
+              onClick={() => setQuickContext(option)}
+              type="button"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="grid gap-3 rounded-lg border border-stone-200 bg-white p-4">
         <label className="block text-sm font-black text-stone-700">
           Search
@@ -2052,6 +2183,10 @@ function LibraryScreen() {
         <ExerciseDetailPanel
           exercise={selectedExercise}
           onClose={() => setSelectedExercise(null)}
+          onStartQuickWorkout={(exercise) => {
+            setSelectedExercise(null);
+            setQuickTemplate(createQuickWorkoutTemplate(exercise));
+          }}
         />
       )}
     </section>
@@ -2117,6 +2252,10 @@ function SettingsScreen({
       availableDays: profileDraft.availableDays,
       injuries: profileDraft.injuries,
       programId: profileDraft.programId,
+      programStartedAt:
+        profileDraft.programId === profile.programId
+          ? profile.programStartedAt
+          : new Date().toISOString(),
       sessionLengthMinutes: profileDraft.sessionLengthMinutes,
       units: profileDraft.units,
       equipment: {
@@ -2563,9 +2702,11 @@ function ScalePicker({
 function ExerciseDetailPanel({
   exercise,
   onClose,
+  onStartQuickWorkout,
 }: {
   exercise: Exercise;
   onClose: () => void;
+  onStartQuickWorkout?: (exercise: Exercise) => void;
 }) {
   return (
     <section className="fixed inset-0 z-20 overflow-y-auto bg-stone-950/35 px-4 py-6">
@@ -2590,6 +2731,16 @@ function ExerciseDetailPanel({
             Close
           </button>
         </header>
+
+        {onStartQuickWorkout && (
+          <button
+            className="min-h-12 w-full rounded-lg bg-emerald-900 px-4 font-black text-white"
+            onClick={() => onStartQuickWorkout(exercise)}
+            type="button"
+          >
+            Start quick session
+          </button>
+        )}
 
         <GuidanceList title="Setup" items={exercise.setupSteps} />
         <GuidanceList title="Steps" items={exercise.executionSteps} />
@@ -2628,8 +2779,6 @@ function SessionDetailPanel({
   onClose: () => void;
   session: WorkoutSession;
 }) {
-  const template = getTemplate(session.templateId);
-
   return (
     <section className="fixed inset-0 z-20 overflow-y-auto bg-stone-950/35 px-4 py-6">
       <article className="mx-auto max-w-md space-y-5 rounded-lg bg-white p-5 shadow-xl">
@@ -2640,7 +2789,7 @@ function SessionDetailPanel({
               {session.context}
             </p>
             <h2 className="mt-1 text-3xl font-black">
-              {template?.dayLabel ?? session.templateId}
+              {sessionTemplateLabel(session.templateId)}
             </h2>
             <p className="mt-2 text-sm font-bold text-stone-500">
               {sessionSetCount(session)} sets logged
@@ -2672,6 +2821,18 @@ function SessionDetailPanel({
                   <p className="mt-1 text-xs font-black uppercase tracking-wide text-stone-500">
                     {result.outcome.replaceAll("_", " ")}
                   </p>
+                  {result.substitutedFrom && (
+                    <p className="mt-2 text-xs font-bold leading-5 text-orange-700">
+                      Swapped from{" "}
+                      {getExercise(result.substitutedFrom)?.name ??
+                        result.substitutedFrom}
+                    </p>
+                  )}
+                  {result.painArea && (
+                    <p className="mt-1 text-xs font-bold leading-5 text-red-700">
+                      Pain area: {result.painArea.replaceAll("_", " ")}
+                    </p>
+                  )}
                 </div>
                 <span className="rounded-md bg-white px-2 py-1 text-xs font-black text-stone-600">
                   {result.setResults.length} sets
@@ -2846,6 +3007,41 @@ function getVariationName(id?: string): string | null {
   return getExercise(id)?.name ?? null;
 }
 
+function createQuickWorkoutTemplate(exercise: Exercise): WorkoutTemplate {
+  return {
+    id: `quick-${exercise.id}`,
+    programId: "quick",
+    dayLabel: `Quick ${exercise.name}`,
+    estimatedMinutes: Math.max(8, Math.round(exercise.defaultSets * 4)),
+    difficulty: exercise.difficulty,
+    blocks: [
+      {
+        id: "quick-main",
+        type: "main",
+        exercises: [
+          {
+            exerciseId: exercise.id,
+            sets: exercise.defaultSets,
+            repRange: exercise.defaultRepRange,
+            restSeconds: exercise.defaultRestSeconds,
+            notes: "Quick session from the exercise library.",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function sessionTemplateLabel(templateId: string): string {
+  const template = getTemplate(templateId);
+  if (template) return template.dayLabel;
+  if (templateId.startsWith("quick-")) {
+    const exerciseId = templateId.replace("quick-", "");
+    return `Quick ${getExercise(exerciseId)?.name ?? exerciseId.replaceAll("-", " ")}`;
+  }
+  return templateId;
+}
+
 function effortLabel(effort: EffortBand): string {
   return effortOptions.find((option) => option.id === effort)?.label ?? effort;
 }
@@ -2883,6 +3079,13 @@ function lastNDaysIsoDate(days: number): string {
 
 function uniqueValues<T extends string>(values: T[]): T[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+}
+
+function scheduledDayForTemplate(profile: UserProfile, index: number): string {
+  const day = profile.availableDays[index % profile.availableDays.length];
+  return day
+    ? (weekdays.find((item) => item.id === day)?.label ?? day)
+    : "Plan";
 }
 
 function dumbbellWeightsToText(equipment: EquipmentProfile | null): string {
@@ -2925,6 +3128,41 @@ function mostFrequent(values: string[]): string | null {
     return totals;
   }, {});
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+function metricTrend(
+  metrics: BodyMetric[],
+  key: "bodyWeight" | "waist" | "hips",
+  units: UserProfile["units"],
+): string {
+  const entries = metrics
+    .filter((metric) => typeof metric[key] === "number")
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const latest = entries[0]?.[key];
+  const previous = entries[entries.length - 1]?.[key];
+
+  if (typeof latest !== "number") return "Not logged";
+  if (typeof previous !== "number" || latest === previous) {
+    return `${latest}${key === "bodyWeight" ? units : ""}`;
+  }
+
+  const delta = latest - previous;
+  const sign = delta > 0 ? "+" : "";
+  return `${latest}${key === "bodyWeight" ? units : ""} (${sign}${delta.toFixed(1)})`;
+}
+
+function averageMetric<K extends keyof DailyCheckIn>(
+  checkIns: DailyCheckIn[],
+  key: K,
+): string | null {
+  const values = checkIns
+    .map((checkIn) => checkIn[key])
+    .filter((value): value is number => typeof value === "number");
+
+  if (!values.length) return null;
+  const average =
+    values.reduce((total, value) => total + value, 0) / values.length;
+  return average.toFixed(average % 1 === 0 ? 0 : 1);
 }
 
 function weekStartIsoDate(): string {
