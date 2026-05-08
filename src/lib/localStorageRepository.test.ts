@@ -90,6 +90,15 @@ describe("LocalStorageRepository", () => {
     ]);
   });
 
+  it("deletes a saved session", async () => {
+    await repository.saveSession(session);
+
+    await repository.deleteSession(session.id);
+
+    await expect(repository.getSession(session.id)).resolves.toBeNull();
+    await expect(repository.listSessions()).resolves.toEqual([]);
+  });
+
   it("saves body metrics and check-ins", async () => {
     const metric: BodyMetric = {
       id: "metric-1",

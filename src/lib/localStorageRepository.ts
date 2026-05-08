@@ -48,6 +48,15 @@ export class LocalStorageRepository implements Repository {
     }
   }
 
+  async deleteSession(id: string): Promise<void> {
+    this.storage.removeItem(STORAGE_KEYS.session(id));
+    const ids = this.read<string[]>(STORAGE_KEYS.sessionsIndex, []);
+    this.write(
+      STORAGE_KEYS.sessionsIndex,
+      ids.filter((sessionId) => sessionId !== id),
+    );
+  }
+
   async listSessions(
     options: { limit?: number; since?: string } = {},
   ): Promise<WorkoutSession[]> {

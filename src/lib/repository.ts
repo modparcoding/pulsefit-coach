@@ -13,6 +13,7 @@ export interface Repository {
 
   getSession(id: string): Promise<WorkoutSession | null>;
   saveSession(session: WorkoutSession): Promise<void>;
+  deleteSession(id: string): Promise<void>;
   listSessions(options?: {
     limit?: number;
     since?: string;

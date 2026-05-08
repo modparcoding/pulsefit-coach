@@ -1853,6 +1853,17 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
     await refreshProgressData();
   }
 
+  async function deleteSession(sessionId: string) {
+    const confirmed = window.confirm(
+      "Delete this workout from history? This cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    await repository.deleteSession(sessionId);
+    setSelectedSession(null);
+    await refreshProgressData();
+  }
+
   const completedThisWeek = sessions.filter(
     (session) =>
       session.completedAt && session.completedAt >= weekStartIsoDate(),
@@ -2261,6 +2272,7 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
       )}
       {selectedSession && (
         <SessionDetailPanel
+          onDelete={() => deleteSession(selectedSession.id)}
           onClose={() => setSelectedSession(null)}
           session={selectedSession}
         />
@@ -3226,9 +3238,11 @@ function ExerciseDetailPanel({
 
 function SessionDetailPanel({
   onClose,
+  onDelete,
   session,
 }: {
   onClose: () => void;
+  onDelete: () => void;
   session: WorkoutSession;
 }) {
   return (
@@ -3319,6 +3333,14 @@ function SessionDetailPanel({
             {session.notes}
           </p>
         )}
+
+        <button
+          className="min-h-12 w-full rounded-lg bg-red-50 px-4 font-black text-red-950"
+          onClick={onDelete}
+          type="button"
+        >
+          Delete session
+        </button>
       </article>
     </section>
   );
