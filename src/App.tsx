@@ -1859,6 +1859,7 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
   const averageEnergy = averageMetric(recentCheckIns, "energy");
   const averageSoreness = averageMetric(recentCheckIns, "soreness");
   const averageSleep = averageMetric(recentCheckIns, "sleepHours");
+  const strengthSummaries = buildStrengthSummaries(sessions, profile.units);
 
   return (
     <section className="space-y-5">
@@ -1928,6 +1929,41 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
           value={averageSleep ? `${averageSleep}h avg` : "Not enough data"}
         />
       </div>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-xl font-black">Strength trends</h2>
+          <p className="mt-1 text-sm font-bold leading-6 text-stone-500">
+            Based on the heaviest logged set for each exercise.
+          </p>
+        </div>
+        {strengthSummaries.length ? (
+          strengthSummaries.slice(0, 5).map((summary) => (
+            <article
+              className="rounded-lg border border-stone-200 bg-white p-4"
+              key={summary.exerciseId}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-black">{summary.name}</h3>
+                  <p className="mt-1 text-sm font-bold text-stone-500">
+                    {summary.latestText}
+                  </p>
+                </div>
+                <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-950">
+                  {summary.trendText}
+                </span>
+              </div>
+              <StrengthSparkline points={summary.points} />
+            </article>
+          ))
+        ) : (
+          <p className="rounded-lg border border-stone-200 bg-white p-4 leading-7 text-stone-600">
+            Log weighted sets during a workout and strength trends will appear
+            here.
+          </p>
+        )}
+      </section>
 
       <section className="space-y-3 rounded-lg border border-stone-200 bg-white p-4">
         <div>
@@ -2835,6 +2871,52 @@ function ScalePicker({
   );
 }
 
+type StrengthPoint = {
+  date: string;
+  reps: number;
+  weight: number;
+};
+
+function StrengthSparkline({ points }: { points: StrengthPoint[] }) {
+  if (points.length < 2) {
+    return (
+      <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm font-bold text-stone-500">
+        One logged session so far.
+      </p>
+    );
+  }
+
+  const weights = points.map((point) => point.weight);
+  const min = Math.min(...weights);
+  const max = Math.max(...weights);
+  const range = Math.max(max - min, 1);
+  const path = points
+    .map((point, index) => {
+      const x = (index / Math.max(points.length - 1, 1)) * 100;
+      const y = 30 - ((point.weight - min) / range) * 24;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="mt-4 h-12 w-full overflow-visible"
+      preserveAspectRatio="none"
+      viewBox="0 0 100 32"
+    >
+      <polyline
+        fill="none"
+        points={path}
+        stroke="rgb(6 78 59)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3"
+      />
+    </svg>
+  );
+}
+
 function ExerciseDetailPanel({
   exercise,
   onClose,
@@ -3271,6 +3353,63 @@ function mostFrequent(values: string[]): string | null {
     return totals;
   }, {});
   return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+}
+
+function buildStrengthSummaries(
+  sessions: WorkoutSession[],
+  units: UserProfile["units"],
+): {
+  exerciseId: string;
+  latestText: string;
+  name: string;
+  points: StrengthPoint[];
+  trendText: string;
+}[] {
+  const byExercise = new Map<string, StrengthPoint[]>();
+
+  for (const session of [...sessions].reverse()) {
+    for (const result of session.exerciseResults) {
+      const weightedSets = result.setResults.filter(
+        (set) => typeof set.actualWeight === "number" && set.actualWeight > 0,
+      );
+      if (!weightedSets.length) continue;
+
+      const bestSet = [...weightedSets].sort(
+        (a, b) =>
+          (b.actualWeight ?? 0) - (a.actualWeight ?? 0) ||
+          b.actualReps - a.actualReps,
+      )[0];
+      const points = byExercise.get(result.exerciseId) ?? [];
+      points.push({
+        date: session.completedAt ?? session.startedAt,
+        reps: bestSet.actualReps,
+        weight: bestSet.actualWeight ?? 0,
+      });
+      byExercise.set(result.exerciseId, points);
+    }
+  }
+
+  return [...byExercise.entries()]
+    .map(([exerciseId, points]) => {
+      const latest = points[points.length - 1];
+      const first = points[0];
+      const delta = latest.weight - first.weight;
+      const sign = delta > 0 ? "+" : "";
+
+      return {
+        exerciseId,
+        name: getExercise(exerciseId)?.name ?? exerciseId.replaceAll("-", " "),
+        points,
+        latestText: `${latest.weight}${units} × ${latest.reps} reps`,
+        trendText:
+          points.length > 1 && delta !== 0
+            ? `${sign}${delta.toFixed(1)}${units}`
+            : points.length > 1
+              ? "Holding"
+              : "New",
+      };
+    })
+    .sort((a, b) => b.points.length - a.points.length);
 }
 
 function metricTrend(
