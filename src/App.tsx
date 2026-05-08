@@ -1370,6 +1370,9 @@ function GuidedWorkout({
 
 function ProgressScreen() {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(
+    null,
+  );
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>([]);
   const [checkIns, setCheckIns] = useState<DailyCheckIn[]>([]);
   const [metricDraft, setMetricDraft] = useState({
@@ -1626,6 +1629,13 @@ function ProgressScreen() {
                   {session.notes}
                 </p>
               )}
+              <button
+                className="mt-3 min-h-10 w-full rounded-lg bg-emerald-50 px-3 text-sm font-black text-emerald-950"
+                onClick={() => setSelectedSession(session)}
+                type="button"
+              >
+                View session details
+              </button>
             </article>
           ))
         ) : (
@@ -1639,6 +1649,12 @@ function ProgressScreen() {
           Last saved: {latestTemplate.dayLabel}. The next workout will use these
           set logs for calmer weight and rep suggestions.
         </p>
+      )}
+      {selectedSession && (
+        <SessionDetailPanel
+          onClose={() => setSelectedSession(null)}
+          session={selectedSession}
+        />
       )}
     </section>
   );
@@ -2052,6 +2068,96 @@ function ExerciseDetailPanel({
             </p>
           </div>
         ) : null}
+      </article>
+    </section>
+  );
+}
+
+function SessionDetailPanel({
+  onClose,
+  session,
+}: {
+  onClose: () => void;
+  session: WorkoutSession;
+}) {
+  const template = getTemplate(session.templateId);
+
+  return (
+    <section className="fixed inset-0 z-20 overflow-y-auto bg-stone-950/35 px-4 py-6">
+      <article className="mx-auto max-w-md space-y-5 rounded-lg bg-white p-5 shadow-xl">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+              {new Date(session.startedAt).toLocaleDateString()} ·{" "}
+              {session.context}
+            </p>
+            <h2 className="mt-1 text-3xl font-black">
+              {template?.dayLabel ?? session.templateId}
+            </h2>
+            <p className="mt-2 text-sm font-bold text-stone-500">
+              {sessionSetCount(session)} sets logged
+              {session.overallEffort
+                ? ` · effort ${session.overallEffort}/10`
+                : ""}
+            </p>
+          </div>
+          <button
+            className="min-h-10 rounded-lg bg-stone-100 px-3 font-black text-stone-600"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </header>
+
+        <div className="grid gap-3">
+          {session.exerciseResults.map((result) => (
+            <article
+              className="rounded-lg border border-stone-200 bg-stone-50 p-4"
+              key={result.id}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-black">
+                    {getExercise(result.exerciseId)?.name ?? result.exerciseId}
+                  </h3>
+                  <p className="mt-1 text-xs font-black uppercase tracking-wide text-stone-500">
+                    {result.outcome.replaceAll("_", " ")}
+                  </p>
+                </div>
+                <span className="rounded-md bg-white px-2 py-1 text-xs font-black text-stone-600">
+                  {result.setResults.length} sets
+                </span>
+              </div>
+              {result.setResults.length ? (
+                <div className="mt-3 grid gap-2">
+                  {result.setResults.map((set) => (
+                    <p
+                      className="rounded-lg bg-white p-3 text-sm font-bold leading-6 text-stone-700"
+                      key={set.setNumber}
+                    >
+                      Set {set.setNumber}: {set.actualReps} reps
+                      {set.actualWeight
+                        ? ` · ${set.actualWeight}${set.unit}`
+                        : ""}{" "}
+                      · {effortLabel(set.effort)}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm font-bold leading-6 text-stone-500">
+                  No set details logged for this exercise.
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+
+        {session.notes && (
+          <p className="rounded-lg bg-emerald-50 p-4 font-bold leading-7 text-emerald-950">
+            {session.notes}
+          </p>
+        )}
       </article>
     </section>
   );
