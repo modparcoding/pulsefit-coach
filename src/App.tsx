@@ -1330,6 +1330,8 @@ function GuidedWorkout({
         (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
         0,
       );
+    const nextTemplate = getNextTemplateAfter(template);
+    const coachingNotes = completionCoachingNotes(results);
 
     return (
       <section className="flex flex-1 flex-col gap-5">
@@ -1356,6 +1358,37 @@ function GuidedWorkout({
               Estimated volume: {Math.round(totalVolume).toLocaleString()}{" "}
               {profile.units}
             </p>
+          )}
+
+          <div className="mt-5 rounded-lg bg-emerald-50 p-4">
+            <p className="text-sm font-black uppercase tracking-wide text-emerald-950">
+              What changes next time
+            </p>
+            <ul className="mt-2 grid gap-2">
+              {coachingNotes.map((note) => (
+                <li
+                  className="text-sm font-bold leading-6 text-emerald-950"
+                  key={note}
+                >
+                  {note}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {nextTemplate && (
+            <div className="mt-4 rounded-lg bg-stone-100 p-4">
+              <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+                Next planned session
+              </p>
+              <p className="mt-1 font-black text-stone-900">
+                {nextTemplate.dayLabel}
+              </p>
+              <p className="mt-1 text-sm font-bold text-stone-500">
+                {nextTemplate.estimatedMinutes} min · level{" "}
+                {nextTemplate.difficulty}
+              </p>
+            </div>
           )}
 
           <label className="mt-5 block text-sm font-black text-stone-700">
@@ -3320,6 +3353,50 @@ function sessionTemplateLabel(templateId: string): string {
     return `Quick ${getExercise(exerciseId)?.name ?? exerciseId.replaceAll("-", " ")}`;
   }
   return templateId;
+}
+
+function getNextTemplateAfter(
+  template: WorkoutTemplate,
+): WorkoutTemplate | null {
+  const program = getProgram(template.programId);
+  if (!program) return null;
+
+  const templates = getTemplatesForProgram(program.id);
+  const index = templates.findIndex((item) => item.id === template.id);
+  if (index === -1 || templates.length < 2) return null;
+  return templates[(index + 1) % templates.length] ?? null;
+}
+
+function completionCoachingNotes(results: LoggedExercise[]): string[] {
+  if (results.some((result) => result.outcome === "pain")) {
+    return [
+      "Pain was flagged, so the next suggestion will be gentler. Do not push through sharp pain.",
+      "Use the easier option or a substitute until the movement feels safe again.",
+    ];
+  }
+
+  if (results.some((result) => result.outcome === "too_hard")) {
+    return [
+      "One exercise was marked too hard, so next time the app will back off the target.",
+      "Finishing with clean form matters more than forcing every rep.",
+    ];
+  }
+
+  if (results.some((result) => result.outcome === "skipped")) {
+    return [
+      "Skipped exercises are saved as useful data, not failure.",
+      "Next time, start with the most important movements while energy is highest.",
+    ];
+  }
+
+  if (results.length) {
+    return [
+      "Your set logs will guide the next weight and rep suggestions.",
+      "If today felt comfortable, the app may nudge some exercises up next time.",
+    ];
+  }
+
+  return ["Save a session and the app will start learning what to suggest."];
 }
 
 function effortLabel(effort: EffortBand): string {
