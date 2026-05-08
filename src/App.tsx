@@ -667,6 +667,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
   const [coachNote, setCoachNote] = useState("");
   const [activeWorkout, setActiveWorkout] = useState(false);
   const [savedDraft, setSavedDraft] = useState<WorkoutDraft | null>(null);
+  const [preferEasierSession, setPreferEasierSession] = useState(false);
   const canResumeDraft =
     Boolean(template) &&
     savedDraft?.userId === profile.id &&
@@ -686,6 +687,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
           setCoachNote(message);
         }}
         profile={profile}
+        preferEasier={preferEasierSession}
         template={template}
       />
     );
@@ -752,13 +754,17 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
           )}
           <button
             className="min-h-12 w-full rounded-lg bg-emerald-900 px-4 font-black text-white"
-            onClick={() =>
-              template
-                ? setActiveWorkout(true)
-                : setCoachNote(
-                    "Today is for recovery. The next build step will show the next training day.",
-                  )
-            }
+            onClick={async () => {
+              setPreferEasierSession(false);
+              if (template) {
+                await repository.clearWorkoutDraft();
+                setActiveWorkout(true);
+                return;
+              }
+              setCoachNote(
+                "Today is for recovery. The next build step will show the next training day.",
+              );
+            }}
             type="button"
           >
             {template ? "Start workout" : "View next workout"}
@@ -766,7 +772,10 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
           {canResumeDraft && (
             <button
               className="min-h-12 w-full rounded-lg bg-orange-50 px-4 font-black text-orange-950"
-              onClick={() => setActiveWorkout(true)}
+              onClick={() => {
+                setPreferEasierSession(false);
+                setActiveWorkout(true);
+              }}
               type="button"
             >
               Resume saved workout
@@ -774,11 +783,15 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
           )}
           <button
             className="min-h-12 w-full rounded-lg bg-emerald-50 px-4 font-black text-emerald-950"
-            onClick={() =>
-              setCoachNote(
-                "Easier swaps will use bodyweight substitutes from the exercise library in the guided workout.",
-              )
-            }
+            onClick={async () => {
+              setPreferEasierSession(true);
+              if (template) {
+                await repository.clearWorkoutDraft();
+                setActiveWorkout(true);
+                return;
+              }
+              setCoachNote("Today is a rest day, so keep movement gentle.");
+            }}
             type="button"
           >
             Swap for easier session
@@ -894,11 +907,13 @@ function GuidedWorkout({
   context,
   onExit,
   profile,
+  preferEasier = false,
   template,
 }: {
   context: "home" | "gym";
   onExit: (message: string) => void;
   profile: UserProfile;
+  preferEasier?: boolean;
   template: WorkoutTemplate;
 }) {
   const activeEquipment = profile.equipment[context];
@@ -910,10 +925,11 @@ function GuidedWorkout({
             item,
             activeEquipment,
             `${item.exerciseId}-${index}`,
+            preferEasier,
           ),
         )
         .filter((item): item is ResolvedPlannedExercise => Boolean(item)),
-    [activeEquipment, template],
+    [activeEquipment, preferEasier, template],
   );
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [exerciseIndex, setExerciseIndex] = useState(0);
@@ -3200,9 +3216,32 @@ function resolvePlannedExercise(
   plannedExercise: PlannedExercise,
   equipment: UserProfile["equipment"]["home"],
   instanceId: string,
+  preferEasier = false,
 ): ResolvedPlannedExercise | null {
   const exercise = getExercise(plannedExercise.exerciseId);
   if (!exercise) return null;
+
+  if (preferEasier) {
+    const easierExercise = [
+      exercise.easierVariation,
+      exercise.bodyweightSubstitute,
+    ]
+      .filter((id): id is string => Boolean(id))
+      .map((id) => getExercise(id))
+      .find((candidate): candidate is Exercise =>
+        Boolean(candidate && exerciseCanBePerformed(candidate, equipment)),
+      );
+
+    if (easierExercise) {
+      return {
+        ...plannedExercise,
+        exerciseId: easierExercise.id,
+        instanceId,
+        substitutedFrom: exercise.id,
+      };
+    }
+  }
+
   if (exerciseCanBePerformed(exercise, equipment)) {
     return { ...plannedExercise, instanceId };
   }
