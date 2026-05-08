@@ -1,0 +1,19 @@
+{
+  "name": "PulseFit Coach",
+  "short_name": "PulseFit",
+  "description": "A calm fitness coaching app for guided workouts, set tracking, and progress monitoring.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fafaf9",
+  "theme_color": "#14532d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
