@@ -17,12 +17,15 @@ import {
   createStandardGymProfile,
   recommendProgramForDraft,
 } from "@/lib/profile";
+import { estimateStartingWeight } from "@/lib/weights";
 import type {
+  EffortBand,
   ExerciseOutcome,
   Goal,
   InjuryFlag,
   PlannedExercise,
   Program,
+  SetResult,
   UserProfile,
   Weekday,
   WorkoutSession,
@@ -56,6 +59,12 @@ const injuryAreas: { id: InjuryFlag["area"]; label: string }[] = [
   { id: "hip", label: "Hip" },
   { id: "ankle", label: "Ankle" },
   { id: "neck", label: "Neck" },
+];
+
+const effortOptions: { id: EffortBand; label: string }[] = [
+  { id: "easy", label: "Easy" },
+  { id: "just_right", label: "Just right" },
+  { id: "hard", label: "Hard" },
 ];
 
 export default function App() {
@@ -778,6 +787,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
 type LoggedExercise = {
   exerciseId: string;
   outcome: ExerciseOutcome;
+  setResults: SetResult[];
 };
 
 function GuidedWorkout({
@@ -797,10 +807,14 @@ function GuidedWorkout({
   );
   const [startedAt] = useState(() => new Date().toISOString());
   const [exerciseIndex, setExerciseIndex] = useState(0);
+  const [setIndex, setSetIndex] = useState(0);
   const [phase, setPhase] = useState<"exercise" | "rest" | "complete">(
     "exercise",
   );
   const [results, setResults] = useState<LoggedExercise[]>([]);
+  const [repsInput, setRepsInput] = useState("");
+  const [weightInput, setWeightInput] = useState("");
+  const [effort, setEffort] = useState<EffortBand>("just_right");
   const [overallEffort, setOverallEffort] = useState<
     1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
   >(7);
@@ -814,20 +828,39 @@ function GuidedWorkout({
   const nextExercise = nextPlannedExercise
     ? getExercise(nextPlannedExercise.exerciseId)
     : null;
-  const completedCount = results.filter(
-    (result) => result.outcome === "completed",
-  ).length;
+  const activeEquipment = profile.equipment[context];
+  const suggestedWeight = exercise
+    ? estimateStartingWeight(exercise, activeEquipment, profile.experienceLevel)
+    : undefined;
+  const currentResult = plannedExercise
+    ? results.find((result) => result.exerciseId === plannedExercise.exerciseId)
+    : undefined;
+  const loggedSets = currentResult?.setResults ?? [];
+  const totalSets = plannedExercise?.sets ?? 0;
+  const completedSetCount = results.reduce(
+    (total, result) =>
+      total + result.setResults.filter((set) => set.completed).length,
+    0,
+  );
 
-  function logExercise(outcome: ExerciseOutcome) {
+  useEffect(() => {
     if (!plannedExercise) return;
-    const nextResults = [
-      ...results.filter(
-        (result) => result.exerciseId !== plannedExercise.exerciseId,
-      ),
-      { exerciseId: plannedExercise.exerciseId, outcome },
-    ];
-    setResults(nextResults);
+    setRepsInput(String(plannedExercise.repRange.max));
+    setWeightInput(suggestedWeight ? String(suggestedWeight) : "");
+    setEffort("just_right");
+  }, [exerciseIndex, plannedExercise, setIndex, suggestedWeight]);
 
+  function upsertResult(nextResult: LoggedExercise) {
+    setResults((current) => [
+      ...current.filter(
+        (result) => result.exerciseId !== nextResult.exerciseId,
+      ),
+      nextResult,
+    ]);
+  }
+
+  function advanceAfterExercise() {
+    setSetIndex(0);
     if (exerciseIndex >= plannedExercises.length - 1) {
       setPhase("complete");
       return;
@@ -836,9 +869,72 @@ function GuidedWorkout({
     setPhase("rest");
   }
 
+  function saveSet() {
+    if (!plannedExercise) return;
+    const actualReps = Math.max(0, Number(repsInput) || 0);
+    const enteredWeight = weightInput.trim() ? Number(weightInput) : undefined;
+    const actualWeight = Number.isFinite(enteredWeight)
+      ? enteredWeight
+      : undefined;
+    const nextSet: SetResult = {
+      setNumber: setIndex + 1,
+      targetReps: plannedExercise.repRange,
+      actualReps,
+      targetWeight: suggestedWeight,
+      actualWeight,
+      unit: actualWeight ? profile.units : undefined,
+      effort,
+      completed: actualReps > 0,
+      loggedAt: new Date().toISOString(),
+    };
+    const nextSetResults = [
+      ...loggedSets.filter((set) => set.setNumber !== nextSet.setNumber),
+      nextSet,
+    ].sort((a, b) => a.setNumber - b.setNumber);
+
+    upsertResult({
+      exerciseId: plannedExercise.exerciseId,
+      outcome:
+        nextSetResults.length >= plannedExercise.sets ? "completed" : "partial",
+      setResults: nextSetResults,
+    });
+
+    if (setIndex >= plannedExercise.sets - 1) {
+      advanceAfterExercise();
+      return;
+    }
+
+    setSetIndex((current) => current + 1);
+  }
+
+  function logExercise(outcome: ExerciseOutcome) {
+    if (!plannedExercise) return;
+    upsertResult({
+      exerciseId: plannedExercise.exerciseId,
+      outcome,
+      setResults: loggedSets,
+    });
+    advanceAfterExercise();
+  }
+
+  function finalExerciseResults(sessionId: string) {
+    return plannedExercises.map((item, index) => {
+      const result = results.find(
+        (logged) => logged.exerciseId === item.exerciseId,
+      );
+      return {
+        id: `${sessionId}-${index + 1}`,
+        exerciseId: item.exerciseId,
+        outcome: result?.outcome ?? "skipped",
+        setResults: result?.setResults ?? [],
+      };
+    });
+  }
+
   async function saveWorkout() {
     const sessionId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const exerciseResults = finalExerciseResults(sessionId);
     setIsSaving(true);
     await repository.saveSession({
       id: sessionId,
@@ -847,7 +943,7 @@ function GuidedWorkout({
       context,
       startedAt,
       completedAt: now,
-      status: results.some((result) => result.outcome !== "completed")
+      status: exerciseResults.some((result) => result.outcome !== "completed")
         ? "partial"
         : "completed",
       durationMinutes: Math.max(
@@ -856,22 +952,12 @@ function GuidedWorkout({
       ),
       overallEffort,
       notes: notes.trim() || undefined,
-      painReported: false,
-      exerciseResults: plannedExercises.map((item, index) => {
-        const result = results.find(
-          (logged) => logged.exerciseId === item.exerciseId,
-        );
-        return {
-          id: `${sessionId}-${index + 1}`,
-          exerciseId: item.exerciseId,
-          outcome: result?.outcome ?? "skipped",
-          setResults: [],
-        };
-      }),
+      painReported: exerciseResults.some((result) => result.outcome === "pain"),
+      exerciseResults,
     });
     setIsSaving(false);
     onExit(
-      `Workout saved. ${completedCount} of ${plannedExercises.length} exercises were marked complete.`,
+      `Workout saved. ${completedSetCount} sets were logged across ${plannedExercises.length} exercises.`,
     );
   }
 
@@ -882,6 +968,16 @@ function GuidedWorkout({
     const tooHardCount = results.filter(
       (result) => result.outcome === "too_hard",
     ).length;
+    const totalPlannedSets = plannedExercises.reduce(
+      (total, item) => total + item.sets,
+      0,
+    );
+    const totalVolume = results
+      .flatMap((result) => result.setResults)
+      .reduce(
+        (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
+        0,
+      );
 
     return (
       <section className="flex flex-1 flex-col gap-5">
@@ -897,12 +993,18 @@ function GuidedWorkout({
         <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <div className="grid grid-cols-3 gap-2">
             <InfoCard
-              label="Complete"
-              value={`${completedCount}/${plannedExercises.length}`}
+              label="Sets logged"
+              value={`${completedSetCount}/${totalPlannedSets}`}
             />
             <InfoCard label="Too hard" value={String(tooHardCount)} />
             <InfoCard label="Skipped" value={String(skippedCount)} />
           </div>
+          {totalVolume > 0 && (
+            <p className="mt-4 rounded-lg bg-stone-100 p-3 text-sm font-bold text-stone-700">
+              Estimated volume: {Math.round(totalVolume).toLocaleString()}{" "}
+              {profile.units}
+            </p>
+          )}
 
           <label className="mt-5 block text-sm font-black text-stone-700">
             Overall effort: {overallEffort} out of 10
@@ -987,19 +1089,105 @@ function GuidedWorkout({
     <section className="flex flex-1 flex-col gap-5">
       <header>
         <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
-          Exercise {exerciseIndex + 1} of {plannedExercises.length} · {context}
+          Exercise {exerciseIndex + 1} of {plannedExercises.length} · set{" "}
+          {Math.min(setIndex + 1, totalSets)} of {totalSets} · {context}
         </p>
         <h1 className="mt-2 text-4xl font-black leading-tight">
           {exercise?.name ?? "Exercise"}
         </h1>
         <p className="mt-2 text-stone-600">
-          {plannedExercise?.sets} sets · {plannedExercise?.repRange.min}-
-          {plannedExercise?.repRange.max} reps · {plannedExercise?.restSeconds}s
-          rest
+          Aim for {plannedExercise?.repRange.min}-
+          {plannedExercise?.repRange.max} reps. Rest{" "}
+          {plannedExercise?.restSeconds}s after this exercise.
         </p>
       </header>
 
       <article className="space-y-5 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+        <div>
+          <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+            Suggested today
+          </p>
+          <p className="mt-2 text-lg font-black text-stone-900">
+            {suggestedWeight
+              ? `${suggestedWeight}${profile.units} × ${plannedExercise?.repRange.min}-${plannedExercise?.repRange.max}`
+              : `${plannedExercise?.repRange.min}-${plannedExercise?.repRange.max} reps with clean form`}
+          </p>
+          <p className="mt-2 text-sm font-bold leading-6 text-stone-500">
+            First pass uses conservative starting weights. Once there is
+            history, this will use the last session.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm font-black text-stone-700">
+            Actual reps
+            <input
+              className="mt-2 min-h-14 w-full rounded-lg border border-stone-200 px-3 text-center text-2xl font-black"
+              inputMode="numeric"
+              min="0"
+              onChange={(event) => setRepsInput(event.target.value)}
+              type="number"
+              value={repsInput}
+            />
+          </label>
+          <label className="block text-sm font-black text-stone-700">
+            Weight {suggestedWeight ? `(${profile.units})` : ""}
+            <input
+              className="mt-2 min-h-14 w-full rounded-lg border border-stone-200 px-3 text-center text-2xl font-black disabled:bg-stone-100 disabled:text-stone-400"
+              disabled={!suggestedWeight}
+              inputMode="decimal"
+              min="0"
+              onChange={(event) => setWeightInput(event.target.value)}
+              type="number"
+              value={weightInput}
+            />
+          </label>
+        </div>
+
+        <div>
+          <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+            How did the set feel?
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {effortOptions.map((option) => (
+              <button
+                className={`min-h-12 rounded-lg border px-2 text-sm font-black ${
+                  effort === option.id
+                    ? "border-emerald-900 bg-emerald-900 text-white"
+                    : "border-stone-200 bg-white text-stone-700"
+                }`}
+                key={option.id}
+                onClick={() => setEffort(option.id)}
+                type="button"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loggedSets.length > 0 && (
+          <div>
+            <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+              Logged so far
+            </p>
+            <div className="mt-2 grid gap-2">
+              {loggedSets.map((set) => (
+                <p
+                  className="rounded-lg bg-stone-100 p-3 text-sm font-bold text-stone-700"
+                  key={set.setNumber}
+                >
+                  Set {set.setNumber}: {set.actualReps} reps
+                  {set.actualWeight
+                    ? ` · ${set.actualWeight}${set.unit}`
+                    : ""}{" "}
+                  · {effortLabel(set.effort)}
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div>
           <p className="text-sm font-black uppercase tracking-wide text-stone-500">
             How to do it
@@ -1051,21 +1239,28 @@ function GuidedWorkout({
       <div className="grid gap-3">
         <button
           className="min-h-12 rounded-lg bg-emerald-900 px-4 font-black text-white"
-          onClick={() => logExercise("completed")}
+          onClick={saveSet}
           type="button"
         >
-          Done
+          Save set
         </button>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <button
-            className="min-h-12 rounded-lg bg-orange-50 px-4 font-black text-orange-950"
+            className="min-h-12 rounded-lg bg-orange-50 px-3 text-sm font-black text-orange-950"
             onClick={() => logExercise("too_hard")}
             type="button"
           >
             Too hard
           </button>
           <button
-            className="min-h-12 rounded-lg bg-stone-200 px-4 font-black text-stone-700"
+            className="min-h-12 rounded-lg bg-red-50 px-3 text-sm font-black text-red-950"
+            onClick={() => logExercise("pain")}
+            type="button"
+          >
+            Pain
+          </button>
+          <button
+            className="min-h-12 rounded-lg bg-stone-200 px-3 text-sm font-black text-stone-700"
             onClick={() => logExercise("skipped")}
             type="button"
           >
@@ -1158,6 +1353,33 @@ function ProgressScreen() {
                   ? ` · effort ${session.overallEffort}/10`
                   : ""}
               </p>
+              <p className="mt-1 text-sm leading-6 text-stone-600">
+                {sessionSetCount(session)} sets logged
+                {sessionVolume(session) > 0
+                  ? ` · ${Math.round(sessionVolume(session)).toLocaleString()} ${session.exerciseResults.some((result) => result.setResults.some((set) => set.unit === "lb")) ? "lb" : "kg"} volume`
+                  : ""}
+              </p>
+              <div className="mt-3 grid gap-2">
+                {session.exerciseResults
+                  .filter((result) => result.setResults.length > 0)
+                  .slice(0, 3)
+                  .map((result) => (
+                    <p
+                      className="rounded-lg bg-stone-100 p-3 text-xs font-bold leading-5 text-stone-600"
+                      key={result.id}
+                    >
+                      {getExercise(result.exerciseId)?.name ??
+                        result.exerciseId}
+                      :{" "}
+                      {result.setResults
+                        .map(
+                          (set) =>
+                            `${set.actualReps}${set.actualWeight ? ` @ ${set.actualWeight}${set.unit}` : ""}`,
+                        )
+                        .join(", ")}
+                    </p>
+                  ))}
+              </div>
               {session.notes && (
                 <p className="mt-2 text-sm leading-6 text-stone-600">
                   {session.notes}
@@ -1360,6 +1582,26 @@ function flattenTemplateExercises(
 function getVariationName(id?: string): string | null {
   if (!id) return null;
   return getExercise(id)?.name ?? null;
+}
+
+function effortLabel(effort: EffortBand): string {
+  return effortOptions.find((option) => option.id === effort)?.label ?? effort;
+}
+
+function sessionSetCount(session: WorkoutSession): number {
+  return session.exerciseResults.reduce(
+    (total, result) => total + result.setResults.length,
+    0,
+  );
+}
+
+function sessionVolume(session: WorkoutSession): number {
+  return session.exerciseResults
+    .flatMap((result) => result.setResults)
+    .reduce(
+      (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
+      0,
+    );
 }
 
 function weekStartIsoDate(): string {
