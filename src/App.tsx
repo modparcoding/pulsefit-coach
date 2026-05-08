@@ -23,7 +23,10 @@ import {
   parseWeights,
   recommendProgramForDraft,
 } from "@/lib/profile";
-import { estimateStartingWeight } from "@/lib/weights";
+import {
+  availableWeightsForExercise,
+  estimateStartingWeight,
+} from "@/lib/weights";
 import type {
   BodyMetric,
   DailyCheckIn,
@@ -973,6 +976,9 @@ function GuidedWorkout({
           profile.experienceLevel,
         )
       : undefined);
+  const availableWeights = exercise
+    ? availableWeightsForExercise(exercise, activeEquipment)
+    : [];
   const currentResult = plannedExercise
     ? results.find((result) => result.instanceId === plannedExercise.instanceId)
     : undefined;
@@ -1156,7 +1162,7 @@ function GuidedWorkout({
     const actualReps = Math.max(0, Number(repsInput) || 0);
     const enteredWeight = weightInput.trim() ? Number(weightInput) : undefined;
     const actualWeight = Number.isFinite(enteredWeight)
-      ? enteredWeight
+      ? snapWeightToAvailable(enteredWeight, availableWeights)
       : undefined;
     const nextSet: SetResult = {
       setNumber: setIndex + 1,
@@ -1649,18 +1655,12 @@ function GuidedWorkout({
               value={repsInput}
             />
           </label>
-          <label className="block text-sm font-black text-stone-700">
-            Weight {suggestedWeight ? `(${profile.units})` : ""}
-            <input
-              className="mt-2 min-h-14 w-full rounded-lg border border-stone-200 px-3 text-center text-2xl font-black disabled:bg-stone-100 disabled:text-stone-400"
-              disabled={!suggestedWeight}
-              inputMode="decimal"
-              min="0"
-              onChange={(event) => setWeightInput(event.target.value)}
-              type="number"
-              value={weightInput}
-            />
-          </label>
+          <WeightSelector
+            availableWeights={availableWeights}
+            onChange={(weight) => setWeightInput(String(weight))}
+            units={profile.units}
+            value={weightInput}
+          />
         </div>
 
         <div>
@@ -2955,6 +2955,73 @@ function ScalePicker({
   );
 }
 
+function WeightSelector({
+  availableWeights,
+  onChange,
+  units,
+  value,
+}: {
+  availableWeights: number[];
+  onChange: (weight: number) => void;
+  units: UserProfile["units"];
+  value: string;
+}) {
+  if (!availableWeights.length) {
+    return (
+      <div className="block text-sm font-black text-stone-700">
+        Weight
+        <div className="mt-2 grid min-h-14 place-items-center rounded-lg border border-stone-200 bg-stone-100 px-3 text-center text-sm font-black text-stone-500">
+          Bodyweight
+        </div>
+      </div>
+    );
+  }
+
+  const numericValue = Number(value);
+  const selectedWeight = Number.isFinite(numericValue)
+    ? snapWeightToAvailable(numericValue, availableWeights)
+    : availableWeights[0];
+  const selectedIndex = Math.max(
+    availableWeights.findIndex((weight) => weight === selectedWeight),
+    0,
+  );
+
+  return (
+    <div className="block text-sm font-black text-stone-700">
+      Weight ({units})
+      <div className="mt-2 grid min-h-14 grid-cols-[44px_1fr_44px] overflow-hidden rounded-lg border border-stone-200">
+        <button
+          className="bg-stone-100 text-xl font-black text-stone-700 disabled:text-stone-300"
+          disabled={selectedIndex <= 0}
+          onClick={() => onChange(availableWeights[selectedIndex - 1])}
+          type="button"
+        >
+          -
+        </button>
+        <select
+          className="border-x border-stone-200 bg-white text-center text-2xl font-black text-stone-900"
+          onChange={(event) => onChange(Number(event.target.value))}
+          value={selectedWeight}
+        >
+          {availableWeights.map((weight) => (
+            <option key={weight} value={weight}>
+              {weight}
+            </option>
+          ))}
+        </select>
+        <button
+          className="bg-stone-100 text-xl font-black text-stone-700 disabled:text-stone-300"
+          disabled={selectedIndex >= availableWeights.length - 1}
+          onClick={() => onChange(availableWeights[selectedIndex + 1])}
+          type="button"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
 type StrengthPoint = {
   date: string;
   reps: number;
@@ -3512,6 +3579,20 @@ function sessionVolume(session: WorkoutSession): number {
       (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
       0,
     );
+}
+
+function snapWeightToAvailable(
+  weight: number | undefined,
+  availableWeights: number[],
+): number | undefined {
+  if (typeof weight !== "number" || !Number.isFinite(weight)) return undefined;
+  if (!availableWeights.length) return weight;
+
+  return availableWeights.reduce((closest, candidate) =>
+    Math.abs(candidate - weight) < Math.abs(closest - weight)
+      ? candidate
+      : closest,
+  );
 }
 
 function findLastExerciseResult(
