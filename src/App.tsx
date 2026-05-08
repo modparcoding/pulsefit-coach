@@ -933,6 +933,7 @@ function GuidedWorkout({
   const [isSaving, setIsSaving] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [restRemaining, setRestRemaining] = useState(60);
+  const [restMode, setRestMode] = useState<"set" | "exercise">("exercise");
   const plannedExercise = plannedExercises[exerciseIndex];
   const exercise = plannedExercise
     ? getExercise(plannedExercise.exerciseId)
@@ -1032,6 +1033,7 @@ function GuidedWorkout({
         );
         setSetIndex(Math.max(draft.setIndex, 0));
         setPhase(draft.phase);
+        setRestMode(draft.restMode ?? "exercise");
         setResults(draft.results);
         setOverallEffort(draft.overallEffort ?? 7);
         setNotes(draft.notes ?? "");
@@ -1057,6 +1059,7 @@ function GuidedWorkout({
       exerciseIndex,
       setIndex,
       phase,
+      restMode,
       results,
       overallEffort,
       notes: notes.trim() || undefined,
@@ -1071,6 +1074,7 @@ function GuidedWorkout({
     phase,
     profile.id,
     results,
+    restMode,
     setIndex,
     startedAt,
     template.id,
@@ -1112,13 +1116,21 @@ function GuidedWorkout({
       return;
     }
 
+    setRestMode("exercise");
     setPhase("rest");
   }
 
   function continueAfterRest() {
+    if (restMode === "set") {
+      setSetIndex((current) => current + 1);
+      setPhase("exercise");
+      return;
+    }
+
     setExerciseIndex((current) =>
       Math.min(current + 1, plannedExercises.length - 1),
     );
+    setSetIndex(0);
     setPhase("exercise");
   }
 
@@ -1159,7 +1171,8 @@ function GuidedWorkout({
       return;
     }
 
-    setSetIndex((current) => current + 1);
+    setRestMode("set");
+    setPhase("rest");
   }
 
   function logExercise(outcome: ExerciseOutcome) {
@@ -1479,6 +1492,14 @@ function GuidedWorkout({
   }
 
   if (phase === "rest") {
+    const previewExercise = restMode === "set" ? exercise : nextExercise;
+    const previewSets =
+      restMode === "set"
+        ? `Set ${Math.min(setIndex + 2, totalSets)} of ${totalSets}`
+        : nextPlannedExercise
+          ? `${nextPlannedExercise.sets} sets · ${nextPlannedExercise.repRange.min}-${nextPlannedExercise.repRange.max} reps`
+          : "Workout complete";
+
     return (
       <section className="flex flex-1 flex-col justify-center gap-5">
         <header>
@@ -1494,18 +1515,12 @@ function GuidedWorkout({
         </header>
         <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-            Next exercise
+            {restMode === "set" ? "Next set" : "Next exercise"}
           </p>
           <h2 className="mt-2 text-2xl font-black">
-            {nextExercise?.name ?? "Finish"}
+            {previewExercise?.name ?? "Finish"}
           </h2>
-          {nextPlannedExercise && (
-            <p className="mt-2 font-bold text-stone-500">
-              {nextPlannedExercise.sets} sets ·{" "}
-              {nextPlannedExercise.repRange.min}-
-              {nextPlannedExercise.repRange.max} reps
-            </p>
-          )}
+          <p className="mt-2 font-bold text-stone-500">{previewSets}</p>
         </article>
         <button
           className="min-h-12 rounded-lg bg-emerald-900 px-4 font-black text-white"
