@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PulseFit Coach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="App navigation">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M4 13h3l2-6 4 10 2-6h5" />
+            </svg>
+          </span>
+          <div>
+            <strong>PulseFit</strong>
+            <span>Coach</span>
+          </div>
+        </div>
+
+        <nav class="nav-tabs" aria-label="Primary">
+          <button class="tab-button active" type="button" data-section="dashboard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10Zm10 8h8V3h-8v18ZM3 21h8v-6H3v6Z" /></svg>
+            <span>Dashboard</span>
+          </button>
+          <button class="tab-button" type="button" data-section="workouts">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M8 12h8" /></svg>
+            <span>Workouts</span>
+          </button>
+          <button class="tab-button" type="button" data-section="progress">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16l3-4 3 2 4-7" /></svg>
+            <span>Progress</span>
+          </button>
+        </nav>
+
+        <div class="coach-note">
+          <span>Today</span>
+          <strong id="coachFocus">Strength base</strong>
+          <small id="coachCue">Keep two reps in reserve on the final set.</small>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Fitness coaching and monitoring</p>
+            <h1>Build the week, track the work.</h1>
+          </div>
+          <button class="icon-action" id="resetData" type="button" aria-label="Reset progress">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A8 8 0 0 0 18.5 9M19 5A8 8 0 0 0 5.5 15" /></svg>
+          </button>
+        </header>
+
+        <section class="screen active" id="dashboard" aria-labelledby="dashboard-title">
+          <div class="hero-panel">
+            <img src="./assets/fitness-coach-hero.png" alt="Athlete training in a bright gym" />
+            <div class="hero-overlay">
+              <p class="eyebrow">Active plan</p>
+              <h2 id="dashboard-title">Lean strength cycle</h2>
+              <div class="hero-metrics">
+                <span><strong id="weeklyMinutes">0</strong> min</span>
+                <span><strong id="weeklyWorkouts">0</strong> sessions</span>
+                <span><strong id="weeklyLoad">0</strong> load</span>
+              </div>
+            </div>
+          </div>
+
+          <section class="control-strip" aria-label="Plan settings">
+            <label>
+              Goal
+              <select id="goalSelect">
+                <option value="strength">Strength</option>
+                <option value="fatloss">Fat loss</option>
+                <option value="mobility">Mobility</option>
+                <option value="endurance">Endurance</option>
+              </select>
+            </label>
+            <label>
+              Weekly target
+              <input id="targetSessions" type="number" min="2" max="7" value="4" />
+            </label>
+            <label>
+              Intensity
+              <input id="intensitySlider" type="range" min="1" max="5" value="3" />
+            </label>
+            <label class="toggle-row">
+              <input id="recoveryToggle" type="checkbox" checked />
+              Recovery prompts
+            </label>
+          </section>
+
+          <div class="dashboard-grid">
+            <section class="panel plan-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">This week</p>
+                  <h3>Training plan</h3>
+                </div>
+                <button class="small-action" id="generatePlan" type="button">Refresh</button>
+              </div>
+              <div class="week-plan" id="weekPlan"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Coach</p>
+                  <h3>Session log</h3>
+                </div>
+              </div>
+              <form class="log-form" id="sessionForm">
+                <label>
+                  Workout
+                  <select id="logWorkout"></select>
+                </label>
+                <label>
+                  Minutes
+                  <input id="logMinutes" type="number" min="10" max="180" value="45" />
+                </label>
+                <label>
+                  Effort
+                  <input id="logEffort" type="range" min="1" max="10" value="7" />
+                </label>
+                <button class="primary-action" type="submit">Log session</button>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="screen" id="workouts" aria-labelledby="workouts-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Workout library</p>
+              <h2 id="workouts-title">Pick a coaching session</h2>
+            </div>
+            <div class="segment-control" aria-label="Workout filter">
+              <button class="active" type="button" data-filter="all">All</button>
+              <button type="button" data-filter="strength">Strength</button>
+              <button type="button" data-filter="conditioning">Conditioning</button>
+              <button type="button" data-filter="recovery">Recovery</button>
+            </div>
+          </div>
+          <div class="workout-grid" id="workoutGrid"></div>
+        </section>
+
+        <section class="screen" id="progress" aria-labelledby="progress-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Monitoring</p>
+              <h2 id="progress-title">Progress over time</h2>
+            </div>
+            <button class="small-action" id="exportSummary" type="button">Copy summary</button>
+          </div>
+
+          <div class="progress-layout">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Last 7 days</p>
+                  <h3>Training load</h3>
+                </div>
+              </div>
+              <canvas id="progressChart" width="900" height="420" aria-label="Seven day training load chart"></canvas>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">History</p>
+                  <h3>Recent sessions</h3>
+                </div>
+              </div>
+              <div class="session-list" id="sessionList"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
