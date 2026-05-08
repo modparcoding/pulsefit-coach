@@ -24,10 +24,15 @@ import {
 } from "@/lib/profile";
 import { estimateStartingWeight } from "@/lib/weights";
 import type {
+  BodyMetric,
+  DailyCheckIn,
   EffortBand,
+  EquipmentRequirement,
+  Exercise,
   ExerciseOutcome,
   Goal,
   InjuryFlag,
+  MovementPattern,
   PlannedExercise,
   Program,
   ProgressionRecommendation,
@@ -72,6 +77,8 @@ const effortOptions: { id: EffortBand; label: string }[] = [
   { id: "just_right", label: "Just right" },
   { id: "hard", label: "Hard" },
 ];
+
+const metricScaleOptions = [1, 2, 3, 4, 5] as const;
 
 export default function App() {
   const [profile, setProfile] = useState<UserProfile | null | undefined>(
@@ -1361,10 +1368,58 @@ function GuidedWorkout({
 
 function ProgressScreen() {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
+  const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>([]);
+  const [checkIns, setCheckIns] = useState<DailyCheckIn[]>([]);
+  const [metricDraft, setMetricDraft] = useState({
+    bodyWeight: "",
+    waist: "",
+    hips: "",
+    sleepHours: "",
+    energy: 3,
+    soreness: 3,
+    sleepQuality: 3,
+    mood: 3,
+    notes: "",
+  });
 
   useEffect(() => {
-    repository.listSessions({ limit: 20 }).then(setSessions);
+    refreshProgressData();
   }, []);
+
+  async function refreshProgressData() {
+    const [nextSessions, nextBodyMetrics, nextCheckIns] = await Promise.all([
+      repository.listSessions({ limit: 20 }),
+      repository.listBodyMetrics({ since: lastNDaysIsoDate(90) }),
+      repository.listCheckIns({ since: lastNDaysIsoDate(90) }),
+    ]);
+    setSessions(nextSessions);
+    setBodyMetrics(nextBodyMetrics);
+    setCheckIns(nextCheckIns);
+  }
+
+  async function saveMetrics() {
+    const date = todayIsoInputDate();
+    const notes = metricDraft.notes.trim();
+    await repository.saveBodyMetric({
+      id: `body-${date}`,
+      date,
+      bodyWeight: optionalNumber(metricDraft.bodyWeight),
+      waist: optionalNumber(metricDraft.waist),
+      hips: optionalNumber(metricDraft.hips),
+      notes: notes || undefined,
+    });
+    await repository.saveCheckIn({
+      id: `checkin-${date}`,
+      date,
+      energy: metricDraft.energy as DailyCheckIn["energy"],
+      soreness: metricDraft.soreness as DailyCheckIn["soreness"],
+      sleepHours: optionalNumber(metricDraft.sleepHours),
+      sleepQuality: metricDraft.sleepQuality as DailyCheckIn["sleepQuality"],
+      mood: metricDraft.mood as DailyCheckIn["mood"],
+    });
+    setMetricDraft((current) => ({ ...current, notes: "" }));
+    await refreshProgressData();
+  }
 
   const completedThisWeek = sessions.filter(
     (session) =>
@@ -1377,6 +1432,8 @@ function ProgressScreen() {
   const latestTemplate = latestSession
     ? getTemplate(latestSession.templateId)
     : null;
+  const latestMetric = bodyMetrics[0];
+  const latestCheckIn = checkIns[0];
 
   return (
     <section className="space-y-5">
@@ -1405,7 +1462,102 @@ function ProgressScreen() {
               : "Start your first workout"
           }
         />
+        <InfoCard
+          label="Latest check-in"
+          value={
+            latestCheckIn
+              ? `Energy ${latestCheckIn.energy ?? "-"} / soreness ${latestCheckIn.soreness ?? "-"}`
+              : "Not logged"
+          }
+        />
       </div>
+
+      <section className="space-y-3 rounded-lg border border-stone-200 bg-white p-4">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+            Body check-in
+          </p>
+          <h2 className="mt-1 text-xl font-black">How are things feeling?</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <MetricField
+            label="Weight"
+            onChange={(value) =>
+              setMetricDraft({ ...metricDraft, bodyWeight: value })
+            }
+            value={metricDraft.bodyWeight}
+          />
+          <MetricField
+            label="Sleep hours"
+            onChange={(value) =>
+              setMetricDraft({ ...metricDraft, sleepHours: value })
+            }
+            value={metricDraft.sleepHours}
+          />
+          <MetricField
+            label="Waist"
+            onChange={(value) =>
+              setMetricDraft({ ...metricDraft, waist: value })
+            }
+            value={metricDraft.waist}
+          />
+          <MetricField
+            label="Hips"
+            onChange={(value) =>
+              setMetricDraft({ ...metricDraft, hips: value })
+            }
+            value={metricDraft.hips}
+          />
+        </div>
+        <ScalePicker
+          label="Energy"
+          onChange={(energy) => setMetricDraft({ ...metricDraft, energy })}
+          value={metricDraft.energy}
+        />
+        <ScalePicker
+          label="Soreness"
+          onChange={(soreness) => setMetricDraft({ ...metricDraft, soreness })}
+          value={metricDraft.soreness}
+        />
+        <ScalePicker
+          label="Sleep quality"
+          onChange={(sleepQuality) =>
+            setMetricDraft({ ...metricDraft, sleepQuality })
+          }
+          value={metricDraft.sleepQuality}
+        />
+        <ScalePicker
+          label="Mood"
+          onChange={(mood) => setMetricDraft({ ...metricDraft, mood })}
+          value={metricDraft.mood}
+        />
+        <label className="block text-sm font-black text-stone-700">
+          Note
+          <textarea
+            className="mt-2 min-h-24 w-full rounded-lg border border-stone-200 p-3 text-base font-medium"
+            onChange={(event) =>
+              setMetricDraft({ ...metricDraft, notes: event.target.value })
+            }
+            placeholder="Optional: energy, soreness, cycle, stress, anything useful."
+            value={metricDraft.notes}
+          />
+        </label>
+        <button
+          className="min-h-12 w-full rounded-lg bg-emerald-900 px-4 font-black text-white"
+          onClick={saveMetrics}
+          type="button"
+        >
+          Save check-in
+        </button>
+        {latestMetric && (
+          <p className="rounded-lg bg-stone-100 p-3 text-sm font-bold leading-6 text-stone-600">
+            Latest body entry: {latestMetric.date}
+            {latestMetric.bodyWeight ? ` · ${latestMetric.bodyWeight}` : ""}
+            {latestMetric.waist ? ` · waist ${latestMetric.waist}` : ""}
+          </p>
+        )}
+      </section>
+
       <section className="space-y-3">
         <h2 className="text-xl font-black">Recent sessions</h2>
         {sessions.length ? (
@@ -1491,7 +1643,33 @@ function ProgressScreen() {
 }
 
 function LibraryScreen() {
-  const exercises = Object.values(EXERCISES).slice(0, 12);
+  const allExercises = Object.values(EXERCISES);
+  const [query, setQuery] = useState("");
+  const [movement, setMovement] = useState<MovementPattern | "all">("all");
+  const [equipment, setEquipment] = useState<EquipmentRequirement | "all">(
+    "all",
+  );
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
+    null,
+  );
+  const movementOptions = uniqueValues(
+    allExercises.map((exercise) => exercise.movementPattern),
+  );
+  const equipmentOptions = uniqueValues(
+    allExercises.flatMap((exercise) => exercise.equipment),
+  );
+  const exercises = allExercises
+    .filter((exercise) =>
+      exercise.name.toLowerCase().includes(query.trim().toLowerCase()),
+    )
+    .filter(
+      (exercise) => movement === "all" || exercise.movementPattern === movement,
+    )
+    .filter(
+      (exercise) =>
+        equipment === "all" || exercise.equipment.includes(equipment),
+    );
+
   return (
     <section className="space-y-5">
       <header>
@@ -1500,33 +1678,94 @@ function LibraryScreen() {
         </p>
         <h1 className="mt-2 text-4xl font-black">Exercise Library</h1>
         <p className="mt-2 leading-7 text-stone-600">
-          A starter view of the guidance library. Filters and full exercise
-          detail pages are next.
+          Browse exercise guidance by movement and equipment. Tap any exercise
+          for setup, cues, mistakes, and safety notes.
         </p>
       </header>
-      <div className="grid gap-3">
-        {exercises.map((exercise) => (
-          <article
-            className="rounded-lg border border-stone-200 bg-white p-4"
-            key={exercise.id}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="font-black">{exercise.name}</h2>
-                <p className="mt-1 text-sm font-bold capitalize text-stone-500">
-                  {exercise.movementPattern.replaceAll("_", " ")}
-                </p>
-              </div>
-              <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-950">
-                Level {exercise.difficulty}
-              </span>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-stone-600">
-              {exercise.coachingCues[0]}
-            </p>
-          </article>
-        ))}
+      <div className="grid gap-3 rounded-lg border border-stone-200 bg-white p-4">
+        <label className="block text-sm font-black text-stone-700">
+          Search
+          <input
+            className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Squat, row, plank..."
+            value={query}
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm font-black text-stone-700">
+            Movement
+            <select
+              className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base capitalize"
+              onChange={(event) =>
+                setMovement(event.target.value as MovementPattern | "all")
+              }
+              value={movement}
+            >
+              <option value="all">All</option>
+              {movementOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option.replaceAll("_", " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-black text-stone-700">
+            Equipment
+            <select
+              className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base capitalize"
+              onChange={(event) =>
+                setEquipment(event.target.value as EquipmentRequirement | "all")
+              }
+              value={equipment}
+            >
+              <option value="all">All</option>
+              {equipmentOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option.replaceAll("_", " ")}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </div>
+      <div className="grid gap-3">
+        {exercises.length ? (
+          exercises.map((exercise) => (
+            <button
+              className="rounded-lg border border-stone-200 bg-white p-4"
+              key={exercise.id}
+              onClick={() => setSelectedExercise(exercise)}
+              type="button"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-left">
+                  <h2 className="font-black">{exercise.name}</h2>
+                  <p className="mt-1 text-sm font-bold capitalize text-stone-500">
+                    {exercise.movementPattern.replaceAll("_", " ")}
+                  </p>
+                </div>
+                <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-950">
+                  Level {exercise.difficulty}
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-stone-600">
+                {exercise.coachingCues[0]}
+              </p>
+            </button>
+          ))
+        ) : (
+          <p className="rounded-lg border border-stone-200 bg-white p-4 leading-7 text-stone-600">
+            No exercises match those filters yet.
+          </p>
+        )}
+      </div>
+      {selectedExercise && (
+        <ExerciseDetailPanel
+          exercise={selectedExercise}
+          onClose={() => setSelectedExercise(null)}
+        />
+      )}
     </section>
   );
 }
@@ -1600,6 +1839,143 @@ function SettingRow({ label, value }: { label: string; value: string }) {
       <dt className="font-bold text-stone-500">{label}</dt>
       <dd className="text-right font-black capitalize">{value}</dd>
     </div>
+  );
+}
+
+function MetricField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <label className="block text-sm font-black text-stone-700">
+      {label}
+      <input
+        className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+        inputMode="decimal"
+        min="0"
+        onChange={(event) => onChange(event.target.value)}
+        type="number"
+        value={value}
+      />
+    </label>
+  );
+}
+
+function ScalePicker({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: 1 | 2 | 3 | 4 | 5) => void;
+  value: number;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-black text-stone-700">{label}</p>
+      <div className="mt-2 grid grid-cols-5 gap-2">
+        {metricScaleOptions.map((option) => (
+          <button
+            className={`min-h-10 rounded-lg border font-black ${
+              value === option
+                ? "border-emerald-900 bg-emerald-900 text-white"
+                : "border-stone-200 bg-white text-stone-600"
+            }`}
+            key={option}
+            onClick={() => onChange(option)}
+            type="button"
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExerciseDetailPanel({
+  exercise,
+  onClose,
+}: {
+  exercise: Exercise;
+  onClose: () => void;
+}) {
+  return (
+    <section className="fixed inset-0 z-20 overflow-y-auto bg-stone-950/35 px-4 py-6">
+      <article className="mx-auto max-w-md space-y-5 rounded-lg bg-white p-5 shadow-xl">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+              {exercise.movementPattern.replaceAll("_", " ")}
+            </p>
+            <h2 className="mt-1 text-3xl font-black">{exercise.name}</h2>
+            <p className="mt-2 text-sm font-bold capitalize text-stone-500">
+              {exercise.equipment
+                .map((item) => item.replaceAll("_", " "))
+                .join(", ")}
+            </p>
+          </div>
+          <button
+            className="min-h-10 rounded-lg bg-stone-100 px-3 font-black text-stone-600"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </header>
+
+        <GuidanceList title="Setup" items={exercise.setupSteps} />
+        <GuidanceList title="Steps" items={exercise.executionSteps} />
+        <GuidanceList title="Coach cues" items={exercise.coachingCues} />
+        <GuidanceList title="Common mistakes" items={exercise.commonMistakes} />
+
+        <div className="grid gap-3">
+          <InfoCard
+            label="Easier"
+            value={getVariationName(exercise.easierVariation) ?? "Reduce reps"}
+          />
+          <InfoCard
+            label="Harder"
+            value={getVariationName(exercise.harderVariation) ?? "Add control"}
+          />
+        </div>
+        {exercise.safetyNotes?.length ? (
+          <div className="rounded-lg bg-orange-50 p-4">
+            <p className="text-sm font-black uppercase tracking-wide text-orange-950">
+              Safety
+            </p>
+            <p className="mt-2 font-bold leading-6 text-orange-950">
+              {exercise.safetyNotes[0]}
+            </p>
+          </div>
+        ) : null}
+      </article>
+    </section>
+  );
+}
+
+function GuidanceList({ items, title }: { items: string[]; title: string }) {
+  return (
+    <section>
+      <h3 className="text-sm font-black uppercase tracking-wide text-stone-500">
+        {title}
+      </h3>
+      <ol className="mt-2 grid gap-2">
+        {items.map((item, index) => (
+          <li
+            className="rounded-lg bg-stone-100 p-3 text-sm font-bold leading-6"
+            key={item}
+          >
+            {index + 1}. {item}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -1689,6 +2065,25 @@ function sessionVolume(session: WorkoutSession): number {
       (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
       0,
     );
+}
+
+function optionalNumber(value: string): number | undefined {
+  const number = Number(value);
+  return Number.isFinite(number) && value.trim() ? number : undefined;
+}
+
+function todayIsoInputDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function lastNDaysIsoDate(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString().slice(0, 10);
+}
+
+function uniqueValues<T extends string>(values: T[]): T[] {
+  return [...new Set(values)].sort((a, b) => a.localeCompare(b));
 }
 
 function weekStartIsoDate(): string {
