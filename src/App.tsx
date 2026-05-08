@@ -107,7 +107,10 @@ export default function App() {
       <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-24 pt-5">
         <Routes>
           <Route path="/" element={<TodayScreen profile={profile} />} />
-          <Route path="/progress" element={<ProgressScreen />} />
+          <Route
+            path="/progress"
+            element={<ProgressScreen profile={profile} />}
+          />
           <Route path="/library" element={<LibraryScreen />} />
           <Route
             path="/settings"
@@ -1549,7 +1552,7 @@ function GuidedWorkout({
   );
 }
 
-function ProgressScreen() {
+function ProgressScreen({ profile }: { profile: UserProfile }) {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(
     null,
@@ -1614,6 +1617,17 @@ function ProgressScreen() {
   const tooHardCount = sessions
     .flatMap((session) => session.exerciseResults)
     .filter((result) => result.outcome === "too_hard").length;
+  const painCount = sessions
+    .flatMap((session) => session.exerciseResults)
+    .filter((result) => result.outcome === "pain").length;
+  const weeklyTarget =
+    getProgram(profile.programId)?.daysPerWeek ?? profile.availableDays.length;
+  const targetRemaining = Math.max(weeklyTarget - completedThisWeek, 0);
+  const mostCompletedTemplate = mostFrequent(
+    sessions
+      .filter((session) => session.status === "completed")
+      .map((session) => session.templateId),
+  );
   const latestSession = sessions[0];
   const latestTemplate = latestSession
     ? getTemplate(latestSession.templateId)
@@ -1637,8 +1651,24 @@ function ProgressScreen() {
           value={`${completedThisWeek} workout${completedThisWeek === 1 ? "" : "s"}`}
         />
         <InfoCard
+          label="Target remaining"
+          value={`${targetRemaining} workout${targetRemaining === 1 ? "" : "s"}`}
+        />
+        <InfoCard
+          label="Most completed"
+          value={
+            mostCompletedTemplate
+              ? (getTemplate(mostCompletedTemplate)?.dayLabel ?? "Workout")
+              : "Not yet"
+          }
+        />
+        <InfoCard
           label="Exercises marked hard"
           value={tooHardCount ? String(tooHardCount) : "None yet"}
+        />
+        <InfoCard
+          label="Pain flags"
+          value={painCount ? String(painCount) : "None"}
         />
         <InfoCard
           label="Suggested next action"
@@ -2676,6 +2706,15 @@ function lastNDaysIsoDate(days: number): string {
 
 function uniqueValues<T extends string>(values: T[]): T[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+}
+
+function mostFrequent(values: string[]): string | null {
+  if (!values.length) return null;
+  const counts = values.reduce<Record<string, number>>((totals, value) => {
+    totals[value] = (totals[value] ?? 0) + 1;
+    return totals;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
 
 function weekStartIsoDate(): string {
