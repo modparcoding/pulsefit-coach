@@ -802,6 +802,8 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
 type LoggedExercise = {
   exerciseId: string;
   outcome: ExerciseOutcome;
+  painArea?: InjuryFlag["area"];
+  substitutedFrom?: string;
   setResults: SetResult[];
 };
 
@@ -823,13 +825,14 @@ function GuidedWorkout({
   const [startedAt] = useState(() => new Date().toISOString());
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [setIndex, setSetIndex] = useState(0);
-  const [phase, setPhase] = useState<"exercise" | "rest" | "complete">(
-    "exercise",
-  );
+  const [phase, setPhase] = useState<
+    "exercise" | "pain" | "too_hard" | "rest" | "complete"
+  >("exercise");
   const [results, setResults] = useState<LoggedExercise[]>([]);
   const [repsInput, setRepsInput] = useState("");
   const [weightInput, setWeightInput] = useState("");
   const [effort, setEffort] = useState<EffortBand>("just_right");
+  const [painArea, setPainArea] = useState<InjuryFlag["area"]>("lower_back");
   const [recommendations, setRecommendations] = useState<
     Record<string, ProgressionRecommendation>
   >({});
@@ -983,6 +986,17 @@ function GuidedWorkout({
     advanceAfterExercise();
   }
 
+  function logPain() {
+    if (!plannedExercise) return;
+    upsertResult({
+      exerciseId: plannedExercise.exerciseId,
+      outcome: "pain",
+      painArea,
+      setResults: loggedSets,
+    });
+    advanceAfterExercise();
+  }
+
   function finalExerciseResults(sessionId: string) {
     return plannedExercises.map((item, index) => {
       const result = results.find(
@@ -992,6 +1006,8 @@ function GuidedWorkout({
         id: `${sessionId}-${index + 1}`,
         exerciseId: item.exerciseId,
         outcome: result?.outcome ?? "skipped",
+        painArea: result?.painArea,
+        substitutedFrom: result?.substitutedFrom,
         setResults: result?.setResults ?? [],
       };
     });
@@ -1129,6 +1145,117 @@ function GuidedWorkout({
         >
           {isSaving ? "Saving..." : "Save workout"}
         </button>
+      </section>
+    );
+  }
+
+  if (phase === "pain") {
+    const substituteId =
+      exercise?.bodyweightSubstitute ??
+      exercise?.easierVariation ??
+      exercise?.substitutes[0];
+
+    return (
+      <section className="flex flex-1 flex-col gap-5">
+        <header>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-red-700">
+            Pain check
+          </p>
+          <h1 className="mt-2 text-4xl font-black leading-tight">
+            Stop this exercise for today.
+          </h1>
+          <p className="mt-2 leading-7 text-stone-600">
+            Sharp pain is a stop signal. We&apos;ll remember this and make the
+            next suggestion gentler.
+          </p>
+        </header>
+
+        <article className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-5">
+          <label className="block text-sm font-black text-red-950">
+            Where did it hurt?
+            <select
+              className="mt-2 min-h-12 w-full rounded-lg border border-red-100 bg-white px-3 text-base capitalize text-stone-900"
+              onChange={(event) =>
+                setPainArea(event.target.value as InjuryFlag["area"])
+              }
+              value={painArea}
+            >
+              {injuryAreas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.label}
+                </option>
+              ))}
+              <option value="other">Other / unsure</option>
+            </select>
+          </label>
+          <p className="rounded-lg bg-white p-4 font-bold leading-7 text-red-950">
+            Suggested swap next time:{" "}
+            {getVariationName(substituteId) ?? "the easier option"}.
+          </p>
+        </article>
+
+        <div className="grid gap-3">
+          <button
+            className="min-h-12 rounded-lg bg-red-900 px-4 font-black text-white"
+            onClick={logPain}
+            type="button"
+          >
+            Save pain flag
+          </button>
+          <button
+            className="min-h-12 rounded-lg bg-stone-200 px-4 font-black text-stone-700"
+            onClick={() => setPhase("exercise")}
+            type="button"
+          >
+            Back
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (phase === "too_hard") {
+    return (
+      <section className="flex flex-1 flex-col gap-5">
+        <header>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+            Too hard
+          </p>
+          <h1 className="mt-2 text-4xl font-black leading-tight">
+            Good data. We&apos;ll back this off.
+          </h1>
+          <p className="mt-2 leading-7 text-stone-600">
+            Stop the remaining sets for this exercise. Next time the coach will
+            suggest a gentler target.
+          </p>
+        </header>
+
+        <article className="rounded-lg border border-orange-100 bg-orange-50 p-5">
+          <p className="font-bold leading-7 text-orange-950">
+            Easier option:{" "}
+            {getVariationName(exercise?.easierVariation) ??
+              getVariationName(exercise?.bodyweightSubstitute) ??
+              "reduce the reps and move slowly with control"}
+            .
+          </p>
+        </article>
+
+        <div className="grid gap-3">
+          <button
+            className="min-h-12 rounded-lg bg-orange-700 px-4 font-black text-white"
+            onClick={() => logExercise("too_hard")}
+            type="button"
+          >
+            Save and move on
+          </button>
+          <button
+            className="min-h-12 rounded-lg bg-stone-200 px-4 font-black text-stone-700"
+            onClick={() => setPhase("exercise")}
+            type="button"
+          >
+            Back
+          </button>
+        </div>
       </section>
     );
   }
@@ -1343,14 +1470,14 @@ function GuidedWorkout({
         <div className="grid grid-cols-3 gap-2">
           <button
             className="min-h-12 rounded-lg bg-orange-50 px-3 text-sm font-black text-orange-950"
-            onClick={() => logExercise("too_hard")}
+            onClick={() => setPhase("too_hard")}
             type="button"
           >
             Too hard
           </button>
           <button
             className="min-h-12 rounded-lg bg-red-50 px-3 text-sm font-black text-red-950"
-            onClick={() => logExercise("pain")}
+            onClick={() => setPhase("pain")}
             type="button"
           >
             Pain
@@ -1798,6 +1925,13 @@ function SettingsScreen({
   const [exportedData, setExportedData] = useState("");
   const [importData, setImportData] = useState("");
   const [message, setMessage] = useState("");
+  const [profileDraft, setProfileDraft] = useState({
+    availableDays: profile.availableDays,
+    injuries: profile.injuries,
+    programId: profile.programId,
+    sessionLengthMinutes: profile.sessionLengthMinutes,
+    units: profile.units,
+  });
 
   async function exportData() {
     setExportedData(await repository.exportAll());
@@ -1818,6 +1952,21 @@ function SettingsScreen({
   async function resetApp() {
     await repository.clearAll();
     onProfileChange(null);
+  }
+
+  async function saveProfileSettings() {
+    const nextProfile: UserProfile = {
+      ...profile,
+      availableDays: profileDraft.availableDays,
+      injuries: profileDraft.injuries,
+      programId: profileDraft.programId,
+      sessionLengthMinutes: profileDraft.sessionLengthMinutes,
+      units: profileDraft.units,
+      updatedAt: new Date().toISOString(),
+    };
+    await repository.saveProfile(nextProfile);
+    onProfileChange(nextProfile);
+    setMessage("Setup updated.");
   }
 
   return (
@@ -1845,6 +1994,144 @@ function SettingsScreen({
             value={profile.equipment.gym ? "Standard gym" : "Not used"}
           />
         </dl>
+      </article>
+      <article className="space-y-4 rounded-lg border border-stone-200 bg-white p-4">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+            Edit plan
+          </p>
+          <h2 className="mt-1 text-xl font-black">Adjust the setup</h2>
+        </div>
+        <label className="block text-sm font-black text-stone-700">
+          Program
+          <select
+            className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+            onChange={(event) =>
+              setProfileDraft({
+                ...profileDraft,
+                programId: event.target.value,
+              })
+            }
+            value={profileDraft.programId}
+          >
+            {Object.values(PROGRAMS).map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div>
+          <p className="text-sm font-black text-stone-700">Training days</p>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            {weekdays.map((day) => {
+              const selected = profileDraft.availableDays.includes(day.id);
+              return (
+                <button
+                  className={`min-h-11 rounded-lg border px-2 font-black ${
+                    selected
+                      ? "border-emerald-900 bg-emerald-900 text-white"
+                      : "border-stone-200 bg-white text-stone-700"
+                  }`}
+                  key={day.id}
+                  onClick={() => {
+                    const nextDays = selected
+                      ? profileDraft.availableDays.filter(
+                          (item) => item !== day.id,
+                        )
+                      : [...profileDraft.availableDays, day.id];
+                    setProfileDraft({
+                      ...profileDraft,
+                      availableDays: nextDays.length ? nextDays : [day.id],
+                    });
+                  }}
+                  type="button"
+                >
+                  {day.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block text-sm font-black text-stone-700">
+            Session length
+            <select
+              className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+              onChange={(event) =>
+                setProfileDraft({
+                  ...profileDraft,
+                  sessionLengthMinutes: Number(
+                    event.target.value,
+                  ) as UserProfile["sessionLengthMinutes"],
+                })
+              }
+              value={profileDraft.sessionLengthMinutes}
+            >
+              <option value={20}>20 min</option>
+              <option value={30}>30 min</option>
+              <option value={45}>45 min</option>
+              <option value={60}>60 min</option>
+            </select>
+          </label>
+          <label className="block text-sm font-black text-stone-700">
+            Units
+            <select
+              className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+              onChange={(event) =>
+                setProfileDraft({
+                  ...profileDraft,
+                  units: event.target.value as UserProfile["units"],
+                })
+              }
+              value={profileDraft.units}
+            >
+              <option value="kg">kg</option>
+              <option value="lb">lb</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <p className="text-sm font-black text-stone-700">Injuries</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {injuryAreas.map((area) => {
+              const selected = profileDraft.injuries.some(
+                (item) => item.area === area.id && item.active,
+              );
+              return (
+                <button
+                  className={`min-h-11 rounded-lg border px-3 text-left text-sm font-black ${
+                    selected
+                      ? "border-emerald-900 bg-emerald-900 text-white"
+                      : "border-stone-200 bg-white text-stone-700"
+                  }`}
+                  key={area.id}
+                  onClick={() => {
+                    const injuries = selected
+                      ? profileDraft.injuries.filter(
+                          (item) => item.area !== area.id,
+                        )
+                      : [
+                          ...profileDraft.injuries,
+                          { area: area.id, active: true },
+                        ];
+                    setProfileDraft({ ...profileDraft, injuries });
+                  }}
+                  type="button"
+                >
+                  {area.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          className="min-h-12 w-full rounded-lg bg-emerald-900 px-4 font-black text-white"
+          onClick={saveProfileSettings}
+          type="button"
+        >
+          Save setup changes
+        </button>
       </article>
       <article className="space-y-4 rounded-lg border border-stone-200 bg-white p-4">
         <div>
