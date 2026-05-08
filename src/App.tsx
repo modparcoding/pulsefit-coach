@@ -660,6 +660,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
   const today = getTodayWorkout(profile, templates);
   const template = today.templateId ? getTemplate(today.templateId) : null;
   const weeklyPlan = templates.slice(0, program.daysPerWeek);
+  const [latestCheckIn, setLatestCheckIn] = useState<DailyCheckIn | null>(null);
   const contextOptions = [
     profile.equipment.home ? ("home" as const) : null,
     profile.equipment.gym ? ("gym" as const) : null,
@@ -680,6 +681,12 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
   useEffect(() => {
     repository.getWorkoutDraft().then(setSavedDraft);
   }, [activeWorkout]);
+
+  useEffect(() => {
+    repository
+      .listCheckIns({ since: lastNDaysIsoDate(7) })
+      .then((checkIns) => setLatestCheckIn(checkIns[0] ?? null));
+  }, []);
 
   if (template && activeWorkout) {
     return (
@@ -737,6 +744,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
             <InfoCard label="Days/week" value={String(program.daysPerWeek)} />
             <InfoCard label="Level" value={profile.experienceLevel} />
           </div>
+          {latestCheckIn && <ReadinessPanel checkIn={latestCheckIn} />}
           {contextOptions.length > 1 && (
             <div className="grid grid-cols-2 gap-2 rounded-lg bg-stone-100 p-1">
               {contextOptions.map((option) => (
@@ -2898,6 +2906,44 @@ function InfoCard({ label, value }: { label: string; value: string }) {
         {label}
       </span>
       <strong className="mt-1 block capitalize">{value}</strong>
+    </div>
+  );
+}
+
+function ReadinessPanel({ checkIn }: { checkIn: DailyCheckIn }) {
+  const lowEnergy = typeof checkIn.energy === "number" && checkIn.energy <= 2;
+  const highSoreness =
+    typeof checkIn.soreness === "number" && checkIn.soreness >= 4;
+  const lowSleep =
+    typeof checkIn.sleepHours === "number" && checkIn.sleepHours < 6;
+  const shouldEaseOff = lowEnergy || highSoreness || lowSleep;
+
+  return (
+    <div
+      className={`rounded-lg p-4 ${
+        shouldEaseOff ? "bg-orange-50" : "bg-emerald-50"
+      }`}
+    >
+      <p
+        className={`text-sm font-black uppercase tracking-wide ${
+          shouldEaseOff ? "text-orange-950" : "text-emerald-950"
+        }`}
+      >
+        Today&apos;s readiness
+      </p>
+      <p
+        className={`mt-2 font-bold leading-6 ${
+          shouldEaseOff ? "text-orange-950" : "text-emerald-950"
+        }`}
+      >
+        {shouldEaseOff
+          ? "Your recent check-in suggests taking the easier option today."
+          : "Your latest check-in looks steady. Use the planned targets and keep form clean."}
+      </p>
+      <p className="mt-2 text-sm font-bold text-stone-500">
+        Energy {checkIn.energy ?? "-"} · soreness {checkIn.soreness ?? "-"}
+        {checkIn.sleepHours ? ` · sleep ${checkIn.sleepHours}h` : ""}
+      </p>
     </div>
   );
 }
