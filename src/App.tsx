@@ -2102,6 +2102,31 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
       </section>
 
       <section className="space-y-3">
+        <div>
+          <h2 className="text-xl font-black">Body trends</h2>
+          <p className="mt-1 text-sm font-bold leading-6 text-stone-500">
+            A simple view of check-ins from the last 90 days.
+          </p>
+        </div>
+        <TrendCard
+          label="Bodyweight"
+          suffix={profile.units}
+          values={metricSeries(bodyMetrics, "bodyWeight")}
+        />
+        <TrendCard label="Waist" values={metricSeries(bodyMetrics, "waist")} />
+        <TrendCard
+          label="Energy"
+          suffix="/5"
+          values={checkInSeries(checkIns, "energy")}
+        />
+        <TrendCard
+          label="Sleep"
+          suffix="h"
+          values={checkInSeries(checkIns, "sleepHours")}
+        />
+      </section>
+
+      <section className="space-y-3">
         <h2 className="text-xl font-black">Recent sessions</h2>
         <div className="grid gap-3 rounded-lg border border-stone-200 bg-white p-4">
           <label className="block text-sm font-black text-stone-700">
@@ -2976,6 +3001,76 @@ function StrengthSparkline({ points }: { points: StrengthPoint[] }) {
   );
 }
 
+function TrendCard({
+  label,
+  suffix = "",
+  values,
+}: {
+  label: string;
+  suffix?: string;
+  values: number[];
+}) {
+  const latest = values[values.length - 1];
+
+  return (
+    <article className="rounded-lg border border-stone-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-black">{label}</h3>
+          <p className="mt-1 text-sm font-bold text-stone-500">
+            {values.length
+              ? `${values.length} entr${values.length === 1 ? "y" : "ies"}`
+              : "No entries yet"}
+          </p>
+        </div>
+        <span className="rounded-md bg-stone-100 px-2 py-1 text-xs font-black text-stone-600">
+          {typeof latest === "number" ? `${latest}${suffix}` : "Not logged"}
+        </span>
+      </div>
+      <NumberSparkline values={values} />
+    </article>
+  );
+}
+
+function NumberSparkline({ values }: { values: number[] }) {
+  if (values.length < 2) {
+    return (
+      <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm font-bold text-stone-500">
+        Add another entry to see a trend.
+      </p>
+    );
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+  const path = values
+    .map((value, index) => {
+      const x = (index / Math.max(values.length - 1, 1)) * 100;
+      const y = 30 - ((value - min) / range) * 24;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="mt-4 h-12 w-full overflow-visible"
+      preserveAspectRatio="none"
+      viewBox="0 0 100 32"
+    >
+      <polyline
+        fill="none"
+        points={path}
+        stroke="rgb(194 65 12)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="3"
+      />
+    </svg>
+  );
+}
+
 function ExerciseDetailPanel({
   exercise,
   lastResult,
@@ -3599,6 +3694,28 @@ function metricTrend(
   const delta = latest - previous;
   const sign = delta > 0 ? "+" : "";
   return `${latest}${key === "bodyWeight" ? units : ""} (${sign}${delta.toFixed(1)})`;
+}
+
+function metricSeries(
+  metrics: BodyMetric[],
+  key: "bodyWeight" | "waist" | "hips",
+): number[] {
+  return metrics
+    .filter((metric) => typeof metric[key] === "number")
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((metric) => metric[key])
+    .filter((value): value is number => typeof value === "number");
+}
+
+function checkInSeries(
+  checkIns: DailyCheckIn[],
+  key: "energy" | "soreness" | "sleepHours" | "sleepQuality" | "mood",
+): number[] {
+  return checkIns
+    .filter((checkIn) => typeof checkIn[key] === "number")
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((checkIn) => checkIn[key])
+    .filter((value): value is number => typeof value === "number");
 }
 
 function averageMetric<K extends keyof DailyCheckIn>(
