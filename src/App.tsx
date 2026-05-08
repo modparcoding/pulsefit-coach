@@ -720,7 +720,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
         <img
           alt="Athlete training in a bright gym"
           className="h-56 w-full object-cover"
-          src="/assets/fitness-coach-hero.png"
+          src={`${import.meta.env.BASE_URL}assets/fitness-coach-hero.png`}
         />
         <div className="space-y-4 p-5">
           <div>

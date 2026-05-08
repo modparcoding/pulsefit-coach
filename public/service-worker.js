@@ -1,10 +1,11 @@
 const CACHE_NAME = "pulsefit-coach-v1";
+const BASE_PATH = new URL(self.registration.scope).pathname;
 const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/icon.svg",
-  "/assets/fitness-coach-hero.png",
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}manifest.webmanifest`,
+  `${BASE_PATH}icon.svg`,
+  `${BASE_PATH}assets/fitness-coach-hero.png`,
 ];
 
 self.addEventListener("install", (event) => {
@@ -42,10 +43,10 @@ self.addEventListener("fetch", (event) => {
           const copy = response.clone();
           caches
             .open(CACHE_NAME)
-            .then((cache) => cache.put("/index.html", copy));
+            .then((cache) => cache.put(`${BASE_PATH}index.html`, copy));
           return response;
         })
-        .catch(() => caches.match("/index.html")),
+        .catch(() => caches.match(`${BASE_PATH}index.html`)),
     );
     return;
   }
