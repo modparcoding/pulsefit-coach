@@ -98,6 +98,18 @@
             </label>
           </section>
 
+          <section class="coach-guidance-panel" aria-labelledby="today-guidance-title">
+            <div>
+              <p class="eyebrow">Today&rsquo;s guidance</p>
+              <h3 id="today-guidance-title">Keep it steady and kind</h3>
+            </div>
+            <ul>
+              <li>If this feels too hard, reduce reps or use the easier option.</li>
+              <li>Stop if you feel sharp pain.</li>
+              <li>Aim for effort 6-8 out of 10.</li>
+            </ul>
+          </section>
+
           <div class="dashboard-grid">
             <section class="panel plan-panel">
               <div class="panel-heading">
@@ -129,6 +141,10 @@
                 <label>
                   Effort
                   <input id="logEffort" type="range" min="1" max="10" value="7" />
+                </label>
+                <label>
+                  Notes
+                  <textarea id="logNotes" rows="4" placeholder="How did it feel? Any changes or wins?"></textarea>
                 </label>
                 <button class="primary-action" type="submit">Log session</button>
               </form>
@@ -184,6 +200,15 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div class="modal-backdrop" id="workoutModal" aria-hidden="true">
+      <section class="workout-detail" role="dialog" aria-modal="true" aria-labelledby="modalWorkoutTitle">
+        <button class="modal-close" id="closeWorkoutModal" type="button" aria-label="Close workout details">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+        <div id="workoutDetailContent"></div>
+      </section>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
