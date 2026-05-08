@@ -20,6 +20,7 @@ import {
   createHomeEquipmentProfile,
   createProfileFromDraft,
   createStandardGymProfile,
+  parseWeights,
   recommendProgramForDraft,
 } from "@/lib/profile";
 import { estimateStartingWeight } from "@/lib/weights";
@@ -27,6 +28,7 @@ import type {
   BodyMetric,
   DailyCheckIn,
   EffortBand,
+  EquipmentProfile,
   EquipmentRequirement,
   Exercise,
   ExerciseOutcome,
@@ -1557,6 +1559,10 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
   const [selectedSession, setSelectedSession] = useState<WorkoutSession | null>(
     null,
   );
+  const [sessionQuery, setSessionQuery] = useState("");
+  const [sessionFilter, setSessionFilter] = useState<
+    "all" | "completed" | "partial" | "pain" | "too_hard"
+  >("all");
   const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>([]);
   const [checkIns, setCheckIns] = useState<DailyCheckIn[]>([]);
   const [metricDraft, setMetricDraft] = useState({
@@ -1632,6 +1638,30 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
   const latestTemplate = latestSession
     ? getTemplate(latestSession.templateId)
     : null;
+  const filteredSessions = sessions
+    .filter((session) => {
+      if (sessionFilter === "all") return true;
+      if (sessionFilter === "pain") return session.painReported;
+      if (sessionFilter === "too_hard") {
+        return session.exerciseResults.some(
+          (result) => result.outcome === "too_hard",
+        );
+      }
+      return session.status === sessionFilter;
+    })
+    .filter((session) => {
+      const query = sessionQuery.trim().toLowerCase();
+      if (!query) return true;
+      const templateName = getTemplate(session.templateId)?.dayLabel ?? "";
+      const exerciseNames = session.exerciseResults
+        .map(
+          (result) => getExercise(result.exerciseId)?.name ?? result.exerciseId,
+        )
+        .join(" ");
+      return `${templateName} ${exerciseNames} ${session.notes ?? ""}`
+        .toLowerCase()
+        .includes(query);
+    });
   const latestMetric = bodyMetrics[0];
   const latestCheckIn = checkIns[0];
 
@@ -1776,8 +1806,35 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
 
       <section className="space-y-3">
         <h2 className="text-xl font-black">Recent sessions</h2>
-        {sessions.length ? (
-          sessions.slice(0, 5).map((session) => (
+        <div className="grid gap-3 rounded-lg border border-stone-200 bg-white p-4">
+          <label className="block text-sm font-black text-stone-700">
+            Search history
+            <input
+              className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+              onChange={(event) => setSessionQuery(event.target.value)}
+              placeholder="Workout, exercise, note..."
+              value={sessionQuery}
+            />
+          </label>
+          <label className="block text-sm font-black text-stone-700">
+            Filter
+            <select
+              className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+              onChange={(event) =>
+                setSessionFilter(event.target.value as typeof sessionFilter)
+              }
+              value={sessionFilter}
+            >
+              <option value="all">All sessions</option>
+              <option value="completed">Completed</option>
+              <option value="partial">Partial</option>
+              <option value="pain">Pain flagged</option>
+              <option value="too_hard">Too hard</option>
+            </select>
+          </label>
+        </div>
+        {filteredSessions.length ? (
+          filteredSessions.slice(0, 8).map((session) => (
             <article
               className="rounded-lg border border-stone-200 bg-white p-4"
               key={session.id}
@@ -1851,7 +1908,9 @@ function ProgressScreen({ profile }: { profile: UserProfile }) {
           ))
         ) : (
           <p className="rounded-lg border border-stone-200 bg-white p-4 leading-7 text-stone-600">
-            Finish a guided workout and it will appear here automatically.
+            {sessions.length
+              ? "No sessions match that search yet."
+              : "Finish a guided workout and it will appear here automatically."}
           </p>
         )}
       </section>
@@ -2016,6 +2075,16 @@ function SettingsScreen({
     sessionLengthMinutes: profile.sessionLengthMinutes,
     units: profile.units,
   });
+  const [equipmentDraft, setEquipmentDraft] = useState({
+    trainsAtHome: Boolean(profile.equipment.home),
+    trainsAtGym: Boolean(profile.equipment.gym),
+    homeBodyweightOnly: profile.equipment.home?.bodyweightOnly ?? true,
+    homeDumbbells: dumbbellWeightsToText(profile.equipment.home),
+    homeKettlebells: (profile.equipment.home?.kettlebells ?? []).join(", "),
+    homeResistanceBands: profile.equipment.home?.resistanceBands ?? false,
+    homeBench: profile.equipment.home?.bench ?? false,
+    homePullUpBar: profile.equipment.home?.pullUpBar ?? false,
+  });
 
   async function exportData() {
     setExportedData(await repository.exportAll());
@@ -2039,6 +2108,10 @@ function SettingsScreen({
   }
 
   async function saveProfileSettings() {
+    const home = equipmentDraft.trainsAtHome
+      ? createEditedHomeEquipment(equipmentDraft)
+      : null;
+    const gym = equipmentDraft.trainsAtGym ? createStandardGymProfile() : null;
     const nextProfile: UserProfile = {
       ...profile,
       availableDays: profileDraft.availableDays,
@@ -2046,6 +2119,10 @@ function SettingsScreen({
       programId: profileDraft.programId,
       sessionLengthMinutes: profileDraft.sessionLengthMinutes,
       units: profileDraft.units,
+      equipment: {
+        home: home || gym ? home : createEditedHomeEquipment(equipmentDraft),
+        gym,
+      },
       updatedAt: new Date().toISOString(),
     };
     await repository.saveProfile(nextProfile);
@@ -2209,6 +2286,106 @@ function SettingsScreen({
             })}
           </div>
         </div>
+        <div className="space-y-3 rounded-lg bg-stone-100 p-4">
+          <p className="text-sm font-black text-stone-700">Training places</p>
+          <div className="grid grid-cols-2 gap-2">
+            <ToggleCard
+              checked={equipmentDraft.trainsAtHome}
+              label="Home"
+              onChange={(checked) =>
+                setEquipmentDraft({
+                  ...equipmentDraft,
+                  trainsAtHome: checked || !equipmentDraft.trainsAtGym,
+                })
+              }
+            />
+            <ToggleCard
+              checked={equipmentDraft.trainsAtGym}
+              label="Gym"
+              onChange={(checked) =>
+                setEquipmentDraft({
+                  ...equipmentDraft,
+                  trainsAtGym: checked || !equipmentDraft.trainsAtHome,
+                })
+              }
+            />
+          </div>
+        </div>
+        {equipmentDraft.trainsAtHome && (
+          <div className="space-y-3 rounded-lg bg-stone-100 p-4">
+            <p className="text-sm font-black text-stone-700">Home equipment</p>
+            <ToggleCard
+              checked={equipmentDraft.homeBodyweightOnly}
+              helper="Use bodyweight substitutions when weights are not available."
+              label="Mostly bodyweight"
+              onChange={(checked) =>
+                setEquipmentDraft({
+                  ...equipmentDraft,
+                  homeBodyweightOnly: checked,
+                })
+              }
+            />
+            <label className="block text-sm font-black text-stone-700">
+              Dumbbells
+              <input
+                className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+                onChange={(event) =>
+                  setEquipmentDraft({
+                    ...equipmentDraft,
+                    homeDumbbells: event.target.value,
+                    homeBodyweightOnly: false,
+                  })
+                }
+                placeholder="Example: 5, 8, 10, 12"
+                value={equipmentDraft.homeDumbbells}
+              />
+            </label>
+            <label className="block text-sm font-black text-stone-700">
+              Kettlebells
+              <input
+                className="mt-2 min-h-12 w-full rounded-lg border border-stone-200 px-3 text-base"
+                onChange={(event) =>
+                  setEquipmentDraft({
+                    ...equipmentDraft,
+                    homeKettlebells: event.target.value,
+                    homeBodyweightOnly: false,
+                  })
+                }
+                placeholder="Example: 8, 12, 16"
+                value={equipmentDraft.homeKettlebells}
+              />
+            </label>
+            <div className="grid gap-2">
+              <ToggleCard
+                checked={equipmentDraft.homeResistanceBands}
+                label="Resistance bands"
+                onChange={(checked) =>
+                  setEquipmentDraft({
+                    ...equipmentDraft,
+                    homeResistanceBands: checked,
+                  })
+                }
+              />
+              <ToggleCard
+                checked={equipmentDraft.homeBench}
+                label="Bench"
+                onChange={(checked) =>
+                  setEquipmentDraft({ ...equipmentDraft, homeBench: checked })
+                }
+              />
+              <ToggleCard
+                checked={equipmentDraft.homePullUpBar}
+                label="Pull-up bar"
+                onChange={(checked) =>
+                  setEquipmentDraft({
+                    ...equipmentDraft,
+                    homePullUpBar: checked,
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
         <button
           className="min-h-12 w-full rounded-lg bg-emerald-900 px-4 font-black text-white"
           onClick={saveProfileSettings}
@@ -2706,6 +2883,39 @@ function lastNDaysIsoDate(days: number): string {
 
 function uniqueValues<T extends string>(values: T[]): T[] {
   return [...new Set(values)].sort((a, b) => a.localeCompare(b));
+}
+
+function dumbbellWeightsToText(equipment: EquipmentProfile | null): string {
+  if (!equipment || equipment.dumbbells.kind === "none") return "";
+  if (equipment.dumbbells.kind === "fixed") {
+    return equipment.dumbbells.weights.join(", ");
+  }
+  return `${equipment.dumbbells.min}, ${equipment.dumbbells.max} adjustable`;
+}
+
+function createEditedHomeEquipment(equipmentDraft: {
+  homeBench: boolean;
+  homeBodyweightOnly: boolean;
+  homeDumbbells: string;
+  homeKettlebells: string;
+  homePullUpBar: boolean;
+  homeResistanceBands: boolean;
+}): EquipmentProfile {
+  const dumbbellWeights = parseWeights(equipmentDraft.homeDumbbells);
+  const kettlebells = parseWeights(equipmentDraft.homeKettlebells);
+  const hasWeights = dumbbellWeights.length > 0 || kettlebells.length > 0;
+
+  return {
+    dumbbells: dumbbellWeights.length
+      ? { kind: "fixed", weights: dumbbellWeights }
+      : { kind: "none" },
+    barbell: null,
+    kettlebells,
+    resistanceBands: equipmentDraft.homeResistanceBands,
+    bench: equipmentDraft.homeBench,
+    pullUpBar: equipmentDraft.homePullUpBar,
+    bodyweightOnly: equipmentDraft.homeBodyweightOnly || !hasWeights,
+  };
 }
 
 function mostFrequent(values: string[]): string | null {
