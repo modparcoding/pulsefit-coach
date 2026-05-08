@@ -30,7 +30,7 @@
         <nav class="nav-tabs" aria-label="Primary">
           <button class="tab-button active" type="button" data-section="dashboard">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h8V3H3v10Zm10 8h8V3h-8v18ZM3 21h8v-6H3v6Z" /></svg>
-            <span>Dashboard</span>
+            <span>Today</span>
           </button>
           <button class="tab-button" type="button" data-section="workouts">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7v10M18 7v10M3 10v4M21 10v4M8 12h8" /></svg>
@@ -52,8 +52,8 @@
       <main>
         <header class="topbar">
           <div>
-            <p class="eyebrow">Fitness coaching and monitoring</p>
-            <h1>Build the week, track the work.</h1>
+            <p class="eyebrow">Your coach for today</p>
+            <h1>Start small. Finish steady.</h1>
           </div>
           <button class="icon-action" id="resetData" type="button" aria-label="Reset progress">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6M20 20v-6h-6M5 19A8 8 0 0 0 18.5 9M19 5A8 8 0 0 0 5.5 15" /></svg>
@@ -61,79 +61,87 @@
         </header>
 
         <section class="screen active" id="dashboard" aria-labelledby="dashboard-title">
-          <div class="hero-panel">
+          <section class="today-card" aria-labelledby="dashboard-title">
             <img src="./assets/fitness-coach-hero.png" alt="Athlete training in a bright gym" />
-            <div class="hero-overlay">
-              <p class="eyebrow">Active plan</p>
-              <h2 id="dashboard-title">Lean strength cycle</h2>
-              <div class="hero-metrics">
-                <span><strong id="weeklyMinutes">0</strong> min</span>
-                <span><strong id="weeklyWorkouts">0</strong> sessions</span>
-                <span><strong id="weeklyLoad">0</strong> load</span>
+            <div class="today-content">
+              <p class="eyebrow">Today&rsquo;s workout</p>
+              <h2 id="dashboard-title">Loading workout</h2>
+              <p id="todayWorkoutFocus">A calm, guided session for today.</p>
+              <div class="today-meta">
+                <span><strong id="todayDuration">0</strong> min</span>
+                <span><strong id="todayDifficulty">Easy</strong> difficulty</span>
+                <span><strong id="todayExerciseCount">0</strong> exercises</span>
+              </div>
+              <div class="today-actions">
+                <button class="primary-action" id="startWorkout" type="button">Start workout</button>
+                <button class="secondary-action" id="swapWorkout" type="button">Swap for easier session</button>
               </div>
             </div>
-          </div>
-
-          <section class="control-strip" aria-label="Plan settings">
-            <label>
-              Goal
-              <select id="goalSelect">
-                <option value="strength">Strength</option>
-                <option value="fatloss">Fat loss</option>
-                <option value="mobility">Mobility</option>
-                <option value="endurance">Endurance</option>
-              </select>
-            </label>
-            <label>
-              Weekly target
-              <input id="targetSessions" type="number" min="2" max="7" value="4" />
-            </label>
-            <label>
-              Intensity
-              <input id="intensitySlider" type="range" min="1" max="5" value="3" />
-            </label>
-            <label class="toggle-row">
-              <input id="recoveryToggle" type="checkbox" checked />
-              Recovery prompts
-            </label>
           </section>
 
-          <div class="dashboard-grid">
-            <section class="panel plan-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">This week</p>
-                  <h3>Training plan</h3>
-                </div>
-                <button class="small-action" id="generatePlan" type="button">Refresh</button>
-              </div>
-              <div class="week-plan" id="weekPlan"></div>
-            </section>
+          <section class="weekly-summary" aria-label="Weekly progress summary">
+            <article>
+              <span>Done this week</span>
+              <strong id="weeklyWorkouts">0</strong>
+            </article>
+            <article>
+              <span>Target remaining</span>
+              <strong id="targetRemaining">0</strong>
+            </article>
+            <article>
+              <span>Minutes moved</span>
+              <strong id="weeklyMinutes">0</strong>
+            </article>
+          </section>
 
-            <section class="panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow">Coach</p>
-                  <h3>Session log</h3>
-                </div>
-              </div>
-              <form class="log-form" id="sessionForm">
-                <label>
-                  Workout
-                  <select id="logWorkout"></select>
-                </label>
-                <label>
-                  Minutes
-                  <input id="logMinutes" type="number" min="10" max="180" value="45" />
-                </label>
-                <label>
-                  Effort
-                  <input id="logEffort" type="range" min="1" max="10" value="7" />
-                </label>
-                <button class="primary-action" type="submit">Log session</button>
-              </form>
+          <section class="coach-guidance-panel" aria-labelledby="today-guidance-title">
+            <div>
+              <p class="eyebrow">Today&rsquo;s guidance</p>
+              <h3 id="today-guidance-title">Keep it steady and kind</h3>
+            </div>
+            <ul>
+              <li>If this feels too hard, reduce reps or use the easier option.</li>
+              <li>Stop if you feel sharp pain.</li>
+              <li>Aim for effort 6-8 out of 10.</li>
+            </ul>
+          </section>
+
+          <section class="insight-grid" id="insightGrid" aria-label="Weekly insights"></section>
+
+          <details class="plan-settings">
+            <summary>Adjust weekly plan</summary>
+            <section class="control-strip" aria-label="Plan settings">
+              <label>
+                Goal
+                <select id="goalSelect">
+                  <option value="strength">Strength</option>
+                  <option value="fatloss">Fat loss</option>
+                  <option value="mobility">Mobility</option>
+                  <option value="endurance">Endurance</option>
+                </select>
+              </label>
+              <label>
+                Weekly target
+                <input id="targetSessions" type="number" min="2" max="7" value="4" />
+              </label>
+              <label>
+                Intensity
+                <input id="intensitySlider" type="range" min="1" max="5" value="3" />
+              </label>
+              <label class="toggle-row">
+                <input id="recoveryToggle" type="checkbox" checked />
+                Recovery prompts
+              </label>
             </section>
-          </div>
+            <div class="panel-heading compact-heading">
+              <div>
+                <p class="eyebrow">This week</p>
+                <h3>Training plan</h3>
+              </div>
+              <button class="small-action" id="generatePlan" type="button">Refresh</button>
+            </div>
+            <div class="week-plan" id="weekPlan"></div>
+          </details>
         </section>
 
         <section class="screen" id="workouts" aria-labelledby="workouts-title">
@@ -162,14 +170,24 @@
           </div>
 
           <div class="progress-layout">
+            <section class="panel progress-insights-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Plain-English check-in</p>
+                  <h3>This week</h3>
+                </div>
+              </div>
+              <div class="analysis-list" id="progressInsights"></div>
+            </section>
+
             <section class="panel">
               <div class="panel-heading">
                 <div>
                   <p class="eyebrow">Last 7 days</p>
-                  <h3>Training load</h3>
+                  <h3>Minutes moved</h3>
                 </div>
               </div>
-              <canvas id="progressChart" width="900" height="420" aria-label="Seven day training load chart"></canvas>
+              <canvas id="progressChart" width="900" height="420" aria-label="Seven day minutes moved chart"></canvas>
             </section>
 
             <section class="panel">
@@ -184,6 +202,21 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div class="modal-backdrop" id="workoutModal" aria-hidden="true">
+      <section class="workout-detail" role="dialog" aria-modal="true" aria-labelledby="modalWorkoutTitle">
+        <button class="modal-close" id="closeWorkoutModal" type="button" aria-label="Close workout details">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+        <div id="workoutDetailContent"></div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop guided-backdrop" id="guidedWorkoutModal" aria-hidden="true">
+      <section class="guided-workout" role="dialog" aria-modal="true" aria-labelledby="guidedWorkoutTitle">
+        <div id="guidedWorkoutContent"></div>
+      </section>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
