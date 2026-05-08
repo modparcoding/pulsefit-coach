@@ -1,0 +1,55 @@
+[
+  {
+    "id": "foundations-3day",
+    "name": "Foundations 3-Day",
+    "description": "A balanced full-body program for beginners. Three workouts per week, hits every major movement pattern, builds confidence and strength without overwhelm. Recommended starting point.",
+    "daysPerWeek": 3,
+    "difficulty": "beginner",
+    "equipmentRequired": ["bodyweight"],
+    "templateIds": [
+      "foundations-day-a",
+      "foundations-day-b",
+      "foundations-day-c"
+    ]
+  },
+  {
+    "id": "upper-lower-4day",
+    "name": "Upper / Lower 4-Day",
+    "description": "Four workouts per week split into upper-body and lower-body days. More volume per muscle group, better for users training consistently who want faster progress.",
+    "daysPerWeek": 4,
+    "difficulty": "intermediate",
+    "equipmentRequired": ["bodyweight", "dumbbells"],
+    "templateIds": [
+      "ul-upper-a",
+      "ul-lower-a",
+      "ul-upper-b",
+      "ul-lower-b"
+    ]
+  },
+  {
+    "id": "ppl-3day",
+    "name": "Push / Pull / Legs 3-Day",
+    "description": "Classic three-way split — pushing movements one day, pulling another, legs the third. Good for users who like clean separation by muscle group.",
+    "daysPerWeek": 3,
+    "difficulty": "intermediate",
+    "equipmentRequired": ["bodyweight", "dumbbells"],
+    "templateIds": [
+      "ppl-push",
+      "ppl-pull",
+      "ppl-legs"
+    ]
+  },
+  {
+    "id": "home-minimal-3day",
+    "name": "Home Minimal 3-Day",
+    "description": "Three full-body workouts using bodyweight only — no equipment needed. Perfect for travel, no-equipment days, or beginners not yet ready to invest in weights.",
+    "daysPerWeek": 3,
+    "difficulty": "beginner",
+    "equipmentRequired": ["bodyweight"],
+    "templateIds": [
+      "home-minimal-a",
+      "home-minimal-b",
+      "home-minimal-c"
+    ]
+  }
+]

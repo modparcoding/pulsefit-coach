@@ -14,7 +14,10 @@ export interface UserProfile {
   injuries: InjuryFlag[];
   programId: string;
   programStartedAt: string;
-  equipment: EquipmentProfile;
+  equipment: {
+    home: EquipmentProfile | null;
+    gym: EquipmentProfile | null;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -86,6 +89,8 @@ export interface Exercise {
   safetyNotes?: string[];
   easierVariation?: string;
   harderVariation?: string;
+  bodyweightSubstitute?: string;
+  startingFraction: number;
   substitutes: string[];
   contraindications?: InjuryFlag["area"][];
   defaultRepRange: { min: number; max: number };
@@ -135,6 +140,7 @@ export interface WorkoutSession {
   id: string;
   userId: string;
   templateId: string;
+  context: "home" | "gym";
   startedAt: string;
   completedAt?: string;
   status: SessionStatus;

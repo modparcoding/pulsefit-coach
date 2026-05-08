@@ -1,0 +1,1264 @@
+[
+  {
+    "id": "goblet-squat",
+    "name": "Goblet Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["core", "upper_back"],
+    "equipment": ["dumbbells"],
+    "difficulty": 2,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Hold one dumbbell vertically at chest height, cupping the top end with both hands.",
+      "Stand with feet shoulder-width apart, toes turned out slightly.",
+      "Keep elbows tucked in front of your chest."
+    ],
+    "executionSteps": [
+      "Take a breath and brace your core.",
+      "Lower by pushing your hips back and bending your knees, keeping your chest up.",
+      "Descend until thighs are parallel to the floor or as deep as comfortable.",
+      "Drive through your whole foot to stand back up.",
+      "Exhale at the top."
+    ],
+    "coachingCues": [
+      "Chest proud — don't let it collapse forward.",
+      "Knees track over your toes, not caving inward.",
+      "Sit between your hips, not behind them."
+    ],
+    "commonMistakes": [
+      "Heels lifting off the floor",
+      "Knees collapsing inward",
+      "Rounding the lower back at the bottom"
+    ],
+    "safetyNotes": [
+      "Stop if you feel sharp knee or back pain.",
+      "If balance is an issue, stand near a wall or chair for support."
+    ],
+    "easierVariation": "bodyweight-squat",
+    "harderVariation": "dumbbell-split-squat",
+    "substitutes": ["bodyweight-squat", "dumbbell-split-squat", "wall-sit"],
+    "bodyweightSubstitute": "bodyweight-squat",
+    "startingFraction": 0.12,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "bodyweight-squat",
+    "name": "Bodyweight Squat",
+    "movementPattern": "squat",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 1,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Stand with feet shoulder-width apart, toes turned out slightly.",
+      "Arms can extend forward for balance, or fold across the chest."
+    ],
+    "executionSteps": [
+      "Push your hips back as if sitting into a chair.",
+      "Bend your knees and lower until thighs are roughly parallel to the floor.",
+      "Keep your chest tall and weight in your whole foot.",
+      "Drive up to standing."
+    ],
+    "coachingCues": [
+      "Imagine sitting back into a chair behind you.",
+      "Knees in line with your toes.",
+      "Squeeze your glutes at the top."
+    ],
+    "commonMistakes": [
+      "Knees collapsing inward",
+      "Heels lifting",
+      "Going too fast and losing form"
+    ],
+    "easierVariation": "box-squat",
+    "harderVariation": "goblet-squat",
+    "substitutes": ["box-squat", "wall-sit"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 10, "max": 20 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "box-squat",
+    "name": "Box Squat (to chair)",
+    "movementPattern": "squat",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 1,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Stand in front of a sturdy chair, bench, or box, feet shoulder-width apart.",
+      "Toes pointed slightly out."
+    ],
+    "executionSteps": [
+      "Lower yourself slowly to lightly touch the chair with your seat.",
+      "Don't fully sit down — pause briefly when you make contact.",
+      "Stand back up by driving through your feet."
+    ],
+    "coachingCues": [
+      "Control the descent — don't drop onto the chair.",
+      "Chest up throughout."
+    ],
+    "commonMistakes": [
+      "Crashing onto the chair",
+      "Using arms to push off the chair to stand"
+    ],
+    "harderVariation": "bodyweight-squat",
+    "substitutes": ["wall-sit", "bodyweight-squat"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "dumbbell-split-squat",
+    "name": "Dumbbell Split Squat",
+    "movementPattern": "lunge",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["dumbbells"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Hold a dumbbell in each hand at your sides.",
+      "Take a long step forward into a split stance — front foot flat, back heel raised.",
+      "Stand tall with hips square."
+    ],
+    "executionSteps": [
+      "Lower straight down by bending both knees.",
+      "Aim for the back knee to gently touch or hover over the floor.",
+      "Drive through the front heel to return to standing.",
+      "Complete all reps on one side, then switch."
+    ],
+    "coachingCues": [
+      "Keep your torso upright — don't lean forward.",
+      "Front knee tracks over the front foot, not past it.",
+      "Most of the weight stays on the front leg."
+    ],
+    "commonMistakes": [
+      "Stance too short, putting strain on the front knee",
+      "Pushing off the back foot too much",
+      "Rocking forward instead of straight down"
+    ],
+    "easierVariation": "split-squat",
+    "harderVariation": "dumbbell-reverse-lunge",
+    "substitutes": ["split-squat", "dumbbell-reverse-lunge", "step-up"],
+    "bodyweightSubstitute": "split-squat",
+    "startingFraction": 0.08,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "split-squat",
+    "name": "Split Squat (Bodyweight)",
+    "movementPattern": "lunge",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Step into a split stance, one foot forward, one back.",
+      "Hands on hips or held in front for balance."
+    ],
+    "executionSteps": [
+      "Lower straight down, both knees bending.",
+      "Back knee tracks toward the floor.",
+      "Drive through the front foot to stand.",
+      "All reps on one side, then switch."
+    ],
+    "coachingCues": [
+      "Stay upright — don't pitch forward.",
+      "Front knee over front foot."
+    ],
+    "commonMistakes": [
+      "Stance too short",
+      "Pushing off the back leg"
+    ],
+    "harderVariation": "dumbbell-split-squat",
+    "substitutes": ["step-up", "dumbbell-split-squat"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "dumbbell-reverse-lunge",
+    "name": "Dumbbell Reverse Lunge",
+    "movementPattern": "lunge",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["dumbbells"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Hold a dumbbell in each hand at your sides.",
+      "Stand tall with feet hip-width apart."
+    ],
+    "executionSteps": [
+      "Step one foot back and lower into a lunge — front thigh parallel, back knee toward the floor.",
+      "Drive through the front foot to return to the start.",
+      "Alternate legs each rep, or complete all on one side first."
+    ],
+    "coachingCues": [
+      "Step back far enough to get a clean 90° in both knees.",
+      "Front knee stays over the front foot, not past it.",
+      "Torso upright throughout."
+    ],
+    "commonMistakes": [
+      "Stepping too short and stressing the front knee",
+      "Letting the torso fall forward",
+      "Rushing the reps and losing balance"
+    ],
+    "easierVariation": "split-squat",
+    "harderVariation": "step-up",
+    "substitutes": ["dumbbell-split-squat", "split-squat", "step-up"],
+    "bodyweightSubstitute": "reverse-lunge",
+    "startingFraction": 0.08,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "reverse-lunge",
+    "name": "Reverse Lunge (Bodyweight)",
+    "movementPattern": "lunge",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Stand tall, feet hip-width apart.",
+      "Hands on hips or held forward for balance."
+    ],
+    "executionSteps": [
+      "Step one foot back into a lunge.",
+      "Drop the back knee toward the floor.",
+      "Push through the front foot to return.",
+      "Alternate legs."
+    ],
+    "coachingCues": [
+      "Long step back, not short.",
+      "Torso vertical."
+    ],
+    "commonMistakes": [
+      "Forward knee travelling too far past the toes",
+      "Wobbling — slow down if you do"
+    ],
+    "harderVariation": "dumbbell-reverse-lunge",
+    "substitutes": ["split-squat", "step-up"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 10, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "step-up",
+    "name": "Step-Up",
+    "movementPattern": "lunge",
+    "primaryMuscles": ["quads", "glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Find a sturdy step, bench, or box at roughly knee height.",
+      "Stand facing it, feet hip-width apart."
+    ],
+    "executionSteps": [
+      "Place one foot fully on the step.",
+      "Drive through that foot to stand all the way up.",
+      "Step back down the same side, controlled.",
+      "All reps on one side, then switch."
+    ],
+    "coachingCues": [
+      "Push through the heel of the stepping foot.",
+      "Don't push off the floor with the trailing leg — let the working leg do all the work.",
+      "Stand fully tall at the top."
+    ],
+    "commonMistakes": [
+      "Using momentum from the bottom leg",
+      "Step that's too high — start lower"
+    ],
+    "harderVariation": "dumbbell-reverse-lunge",
+    "substitutes": ["split-squat", "reverse-lunge"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "dumbbell-romanian-deadlift",
+    "name": "Dumbbell Romanian Deadlift",
+    "movementPattern": "hinge",
+    "primaryMuscles": ["hamstrings", "glutes"],
+    "secondaryMuscles": ["lower_back", "core"],
+    "equipment": ["dumbbells"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Hold a dumbbell in each hand in front of your thighs, palms facing your body.",
+      "Stand with feet hip-width apart, knees soft (slightly bent, not locked)."
+    ],
+    "executionSteps": [
+      "Push your hips back as if closing a car door behind you.",
+      "Lower the weights down the front of your legs — they should brush your shins or stay close.",
+      "Stop when you feel a strong stretch in your hamstrings (usually around mid-shin).",
+      "Drive your hips forward to return to standing.",
+      "Squeeze your glutes at the top."
+    ],
+    "coachingCues": [
+      "It's a hip movement, not a knee bend.",
+      "Keep the back flat — long line from your head to your tailbone.",
+      "Weights stay close to your legs the whole way."
+    ],
+    "commonMistakes": [
+      "Rounding the lower back",
+      "Bending the knees too much (turning it into a squat)",
+      "Letting the dumbbells drift away from the body"
+    ],
+    "safetyNotes": [
+      "If you feel this in your lower back, stop and reduce range or weight.",
+      "Should be felt in the back of the legs."
+    ],
+    "easierVariation": "hip-hinge-bodyweight",
+    "harderVariation": "single-leg-rdl",
+    "substitutes": ["hip-hinge-bodyweight", "single-leg-rdl", "glute-bridge"],
+    "bodyweightSubstitute": "hip-hinge-bodyweight",
+    "startingFraction": 0.15,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "hip-hinge-bodyweight",
+    "name": "Hip Hinge (Bodyweight)",
+    "movementPattern": "hinge",
+    "primaryMuscles": ["hamstrings", "glutes"],
+    "secondaryMuscles": ["lower_back"],
+    "equipment": ["bodyweight"],
+    "difficulty": 1,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Stand with feet hip-width apart, knees slightly bent.",
+      "Hands across your chest or on your hips."
+    ],
+    "executionSteps": [
+      "Push your hips back as far as comfortable.",
+      "Let your torso fold forward, keeping the back flat.",
+      "Stop when you feel a stretch in your hamstrings.",
+      "Drive your hips forward to stand tall."
+    ],
+    "coachingCues": [
+      "Hips move back — don't just bend forward.",
+      "Long spine, no rounding."
+    ],
+    "commonMistakes": [
+      "Rounding the back",
+      "Bending the knees instead of hinging"
+    ],
+    "harderVariation": "dumbbell-romanian-deadlift",
+    "substitutes": ["glute-bridge", "single-leg-rdl"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 10, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "single-leg-rdl",
+    "name": "Single-Leg Romanian Deadlift",
+    "movementPattern": "hinge",
+    "primaryMuscles": ["hamstrings", "glutes"],
+    "secondaryMuscles": ["core", "lower_back"],
+    "equipment": ["bodyweight"],
+    "difficulty": 3,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Stand on one leg, soft bend in the standing knee.",
+      "Optional: hold a light dumbbell in the opposite hand for counterbalance."
+    ],
+    "executionSteps": [
+      "Hinge at the hips, letting the free leg extend straight back behind you.",
+      "Body forms a straight line from head to back heel.",
+      "Lower until you feel a stretch in the standing leg's hamstring.",
+      "Drive the standing-leg hip forward to return upright."
+    ],
+    "coachingCues": [
+      "Imagine your back leg and torso are one straight stick.",
+      "Hips stay square — don't twist open.",
+      "Slow and controlled — balance is the challenge."
+    ],
+    "commonMistakes": [
+      "Hips opening sideways",
+      "Bending the standing knee too much",
+      "Going too fast and losing balance"
+    ],
+    "easierVariation": "hip-hinge-bodyweight",
+    "harderVariation": "dumbbell-romanian-deadlift",
+    "substitutes": ["dumbbell-romanian-deadlift", "hip-hinge-bodyweight"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 6, "max": 10 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "glute-bridge",
+    "name": "Glute Bridge",
+    "movementPattern": "hinge",
+    "primaryMuscles": ["glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 1,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Lie on your back, knees bent, feet flat on the floor about hip-width apart.",
+      "Heels close enough that fingertips can almost touch them.",
+      "Arms relaxed at your sides."
+    ],
+    "executionSteps": [
+      "Squeeze your glutes and drive your hips up.",
+      "Form a straight line from knees to shoulders at the top.",
+      "Pause and squeeze for a beat.",
+      "Lower with control."
+    ],
+    "coachingCues": [
+      "Push the floor away with your heels.",
+      "Feel it in the glutes, not the lower back.",
+      "Don't over-arch at the top — straight line, not banana shape."
+    ],
+    "commonMistakes": [
+      "Pushing through the toes instead of the heels",
+      "Hyperextending and arching the lower back at the top"
+    ],
+    "harderVariation": "dumbbell-hip-thrust",
+    "substitutes": ["dumbbell-hip-thrust", "hip-hinge-bodyweight"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 10, "max": 20 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 45
+  },
+  {
+    "id": "dumbbell-hip-thrust",
+    "name": "Dumbbell Hip Thrust",
+    "movementPattern": "hinge",
+    "primaryMuscles": ["glutes"],
+    "secondaryMuscles": ["hamstrings", "core"],
+    "equipment": ["dumbbells", "bench"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Sit on the floor with your upper back against the long edge of a bench.",
+      "Place a dumbbell across your hip crease (use a folded towel for comfort).",
+      "Feet flat, hip-width apart, knees bent at about 90° at the top of the movement."
+    ],
+    "executionSteps": [
+      "Brace your core and squeeze your glutes.",
+      "Drive your hips up until your torso is parallel to the floor.",
+      "Pause and squeeze for one second.",
+      "Lower with control without letting the weight rest fully on the floor between reps."
+    ],
+    "coachingCues": [
+      "Tuck your chin slightly — eyes look at the dumbbell, not the ceiling.",
+      "Feel the squeeze in your glutes at the top.",
+      "Knees stay over your ankles, not collapsing in or flaring out."
+    ],
+    "commonMistakes": [
+      "Arching the lower back instead of finishing with the glutes",
+      "Knees caving inward",
+      "Using a bench that's too tall (shoulders too high) — should be just below the shoulder blades"
+    ],
+    "safetyNotes": [
+      "Place the dumbbell carefully — they can pinch. A pad or folded towel makes a big difference."
+    ],
+    "easierVariation": "glute-bridge",
+    "harderVariation": "single-leg-rdl",
+    "substitutes": ["glute-bridge", "dumbbell-romanian-deadlift"],
+    "bodyweightSubstitute": "glute-bridge",
+    "startingFraction": 0.20,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "dumbbell-bench-press",
+    "name": "Dumbbell Bench Press",
+    "movementPattern": "push_horizontal",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["shoulders", "triceps"],
+    "equipment": ["dumbbells", "bench"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Sit on the bench with a dumbbell on each thigh.",
+      "Lie back, using your knees to help kick the weights up to chest level.",
+      "Feet flat on the floor, dumbbells held above your chest with palms facing your feet."
+    ],
+    "executionSteps": [
+      "Lower the dumbbells under control to chest level — slightly wider than shoulders.",
+      "Pause briefly when your upper arms are roughly parallel to the floor.",
+      "Press the weights up and slightly toward each other until arms are extended (don't lock out hard).",
+      "Repeat."
+    ],
+    "coachingCues": [
+      "Wrists stacked over elbows.",
+      "Lower with control — about 2 seconds down.",
+      "Squeeze your chest at the top."
+    ],
+    "commonMistakes": [
+      "Bouncing the weights at the bottom",
+      "Flaring elbows out to 90° — keep them at about 45° from the body",
+      "Arching the lower back excessively"
+    ],
+    "safetyNotes": [
+      "Use weights you can fully control — no need to fail solo without a spotter.",
+      "If bench-pressing without a partner, stay conservative."
+    ],
+    "easierVariation": "incline-push-up",
+    "harderVariation": "push-up",
+    "substitutes": ["push-up", "incline-push-up", "dumbbell-floor-press"],
+    "bodyweightSubstitute": "push-up",
+    "startingFraction": 0.10,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "dumbbell-floor-press",
+    "name": "Dumbbell Floor Press",
+    "movementPattern": "push_horizontal",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["triceps", "shoulders"],
+    "equipment": ["dumbbells"],
+    "difficulty": 2,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Lie on the floor with knees bent, feet flat.",
+      "Hold a dumbbell in each hand above your chest, palms facing your feet."
+    ],
+    "executionSteps": [
+      "Lower the weights until your upper arms touch the floor.",
+      "Pause briefly.",
+      "Press back up to the starting position."
+    ],
+    "coachingCues": [
+      "Elbows tucked to about 45°.",
+      "Floor sets a natural depth limit — use it."
+    ],
+    "commonMistakes": [
+      "Slamming the elbows into the floor",
+      "Bouncing off the floor"
+    ],
+    "easierVariation": "incline-push-up",
+    "harderVariation": "dumbbell-bench-press",
+    "substitutes": ["dumbbell-bench-press", "push-up"],
+    "bodyweightSubstitute": "push-up",
+    "startingFraction": 0.10,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "push-up",
+    "name": "Push-Up",
+    "movementPattern": "push_horizontal",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["shoulders", "triceps", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 3,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Hands on the floor slightly wider than shoulder-width.",
+      "Feet together or hip-width apart.",
+      "Body forms a straight line from head to heels."
+    ],
+    "executionSteps": [
+      "Brace your core and squeeze your glutes.",
+      "Lower under control until your chest is just above the floor.",
+      "Press back up by pushing the floor away.",
+      "Maintain the straight body line throughout."
+    ],
+    "coachingCues": [
+      "Hands stack under shoulders, not in front.",
+      "Elbows at about 45°, not flared straight out.",
+      "Squeeze glutes — don't let hips sag."
+    ],
+    "commonMistakes": [
+      "Hips sagging",
+      "Hips piking up (butt in the air)",
+      "Half-reps — chest barely moves"
+    ],
+    "easierVariation": "incline-push-up",
+    "harderVariation": "decline-push-up",
+    "substitutes": ["incline-push-up", "kneeling-push-up", "dumbbell-floor-press"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 5, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "kneeling-push-up",
+    "name": "Kneeling Push-Up",
+    "movementPattern": "push_horizontal",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["shoulders", "triceps"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Kneel on the floor, hands shoulder-width apart in front of you.",
+      "Walk hands forward until your body forms a straight line from head to knees.",
+      "Knees act as the pivot point instead of toes."
+    ],
+    "executionSteps": [
+      "Lower your chest toward the floor with control.",
+      "Press back up to the starting position.",
+      "Keep the straight line from knees to head throughout."
+    ],
+    "coachingCues": [
+      "Same body-line discipline as a full push-up — knees down doesn't mean hips sag.",
+      "Elbows about 45°."
+    ],
+    "commonMistakes": [
+      "Sitting back onto the heels at the top",
+      "Hips sagging or piking"
+    ],
+    "easierVariation": "incline-push-up",
+    "harderVariation": "push-up",
+    "substitutes": ["incline-push-up", "push-up"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "incline-push-up",
+    "name": "Incline Push-Up",
+    "movementPattern": "push_horizontal",
+    "primaryMuscles": ["chest"],
+    "secondaryMuscles": ["shoulders", "triceps"],
+    "equipment": ["bodyweight"],
+    "difficulty": 1,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Place hands on a sturdy surface — countertop, bench, sturdy chair, or wall.",
+      "Step feet back so your body is at an angle, straight line from head to heels.",
+      "The higher the surface, the easier the push-up."
+    ],
+    "executionSteps": [
+      "Lower chest to the surface under control.",
+      "Press back up."
+    ],
+    "coachingCues": [
+      "Pick the height that lets you do 8–12 clean reps.",
+      "As you get stronger, lower the surface."
+    ],
+    "commonMistakes": [
+      "Surface too low too soon",
+      "Hips sagging or piking"
+    ],
+    "harderVariation": "kneeling-push-up",
+    "substitutes": ["kneeling-push-up", "push-up"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "decline-push-up",
+    "name": "Decline Push-Up",
+    "movementPattern": "push_horizontal",
+    "primaryMuscles": ["chest", "shoulders"],
+    "secondaryMuscles": ["triceps", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 4,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Hands on the floor, feet elevated on a sturdy bench, step, or chair.",
+      "Body forms a straight line from head to heels."
+    ],
+    "executionSteps": [
+      "Lower under control until your chest is just above the floor.",
+      "Press back up.",
+      "Maintain the straight line."
+    ],
+    "coachingCues": [
+      "The higher your feet, the harder it gets — don't go too high too fast.",
+      "Core stays braced throughout."
+    ],
+    "commonMistakes": [
+      "Hips sagging",
+      "Going too high too fast and losing form"
+    ],
+    "easierVariation": "push-up",
+    "substitutes": ["push-up"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 5, "max": 10 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "dumbbell-shoulder-press",
+    "name": "Dumbbell Shoulder Press (Seated)",
+    "movementPattern": "push_vertical",
+    "primaryMuscles": ["shoulders"],
+    "secondaryMuscles": ["triceps", "upper_back"],
+    "equipment": ["dumbbells", "bench"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Sit on a bench with back support, feet flat.",
+      "Hold dumbbells at shoulder height, palms facing forward, elbows bent.",
+      "Wrists stacked over elbows."
+    ],
+    "executionSteps": [
+      "Brace your core.",
+      "Press the dumbbells overhead until arms are nearly extended.",
+      "Lower with control to the starting position."
+    ],
+    "coachingCues": [
+      "Don't over-arch the lower back — ribs down.",
+      "Elbows under wrists throughout the press.",
+      "Press up and slightly together at the top."
+    ],
+    "commonMistakes": [
+      "Excessive lower back arch",
+      "Going too heavy and losing the press path",
+      "Locking elbows hard at the top"
+    ],
+    "safetyNotes": [
+      "If you have shoulder issues, try a neutral grip (palms facing each other) instead."
+    ],
+    "easierVariation": "incline-push-up",
+    "harderVariation": "pike-push-up",
+    "substitutes": ["pike-push-up", "dumbbell-lateral-raise"],
+    "bodyweightSubstitute": "pike-push-up",
+    "startingFraction": 0.06,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "pike-push-up",
+    "name": "Pike Push-Up",
+    "movementPattern": "push_vertical",
+    "primaryMuscles": ["shoulders"],
+    "secondaryMuscles": ["triceps", "upper_back"],
+    "equipment": ["bodyweight"],
+    "difficulty": 3,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Start in a downward-dog shape — hands and feet on the floor, hips high, body forms an inverted V.",
+      "Hands shoulder-width, feet hip-width."
+    ],
+    "executionSteps": [
+      "Bend the elbows to lower the top of your head toward the floor between your hands.",
+      "Press back up to the starting V shape."
+    ],
+    "coachingCues": [
+      "The more vertical your torso, the more shoulder-focused the move.",
+      "Elbows track at about 45°, not flared straight out."
+    ],
+    "commonMistakes": [
+      "Letting hips drop into a regular push-up position",
+      "Head bending forward instead of crown going down"
+    ],
+    "easierVariation": "incline-push-up",
+    "harderVariation": "dumbbell-shoulder-press",
+    "substitutes": ["dumbbell-shoulder-press", "incline-push-up"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 5, "max": 10 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "dumbbell-lateral-raise",
+    "name": "Dumbbell Lateral Raise",
+    "movementPattern": "push_vertical",
+    "primaryMuscles": ["shoulders"],
+    "secondaryMuscles": ["upper_back"],
+    "equipment": ["dumbbells"],
+    "difficulty": 2,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Stand tall, dumbbell in each hand at your sides, palms facing your body.",
+      "Soft bend in the elbows."
+    ],
+    "executionSteps": [
+      "Raise both arms out to the sides until they're roughly parallel to the floor.",
+      "Lead with the elbows, not the hands.",
+      "Pause briefly.",
+      "Lower with control."
+    ],
+    "coachingCues": [
+      "Imagine pouring water from the dumbbells at the top.",
+      "No swinging — strict form, lighter weights.",
+      "Soft elbow bend stays the same throughout."
+    ],
+    "commonMistakes": [
+      "Using momentum to swing the weights up",
+      "Going too heavy and shrugging instead of raising"
+    ],
+    "easierVariation": "pike-push-up",
+    "substitutes": ["pike-push-up", "dumbbell-shoulder-press"],
+    "bodyweightSubstitute": "pike-push-up",
+    "startingFraction": 0.04,
+    "defaultRepRange": { "min": 10, "max": 15 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "dumbbell-row",
+    "name": "Dumbbell Row (One Arm)",
+    "movementPattern": "pull_horizontal",
+    "primaryMuscles": ["upper_back", "lats"],
+    "secondaryMuscles": ["biceps", "rear_delts", "core"],
+    "equipment": ["dumbbells", "bench"],
+    "difficulty": 2,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Place one knee and the same-side hand on a bench.",
+      "Other foot on the floor for stability.",
+      "Holding a dumbbell in the free hand, let it hang straight down.",
+      "Back flat, parallel to the floor."
+    ],
+    "executionSteps": [
+      "Pull the dumbbell up toward your hip — elbow leads, not the hand.",
+      "Squeeze your shoulder blade toward your spine at the top.",
+      "Lower the weight under control to a full stretch.",
+      "All reps on one side, then switch."
+    ],
+    "coachingCues": [
+      "Imagine starting a lawn mower.",
+      "Pull with the back, not the arm.",
+      "Don't twist your torso to lift heavier — keep hips square."
+    ],
+    "commonMistakes": [
+      "Twisting the torso to use momentum",
+      "Pulling with the bicep instead of the back",
+      "Letting the back round at the bottom of the rep"
+    ],
+    "easierVariation": "inverted-row",
+    "harderVariation": "inverted-row",
+    "substitutes": ["inverted-row", "dumbbell-bent-over-row"],
+    "bodyweightSubstitute": "inverted-row",
+    "startingFraction": 0.10,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "dumbbell-bent-over-row",
+    "name": "Dumbbell Bent-Over Row (Two Arms)",
+    "movementPattern": "pull_horizontal",
+    "primaryMuscles": ["upper_back", "lats"],
+    "secondaryMuscles": ["biceps", "rear_delts", "core"],
+    "equipment": ["dumbbells"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Hold a dumbbell in each hand, hinge at the hips so torso is roughly 45° to the floor.",
+      "Knees soft, back flat.",
+      "Arms hang straight down, palms facing each other or the body."
+    ],
+    "executionSteps": [
+      "Pull both dumbbells up toward your hips, elbows leading.",
+      "Squeeze your shoulder blades together at the top.",
+      "Lower with control."
+    ],
+    "coachingCues": [
+      "Long flat back — don't round.",
+      "Pull to the hips, not the chest.",
+      "Hold the hinge — don't stand up while you row."
+    ],
+    "commonMistakes": [
+      "Standing up to use momentum",
+      "Rounding the lower back",
+      "Pulling with the arms only"
+    ],
+    "safetyNotes": [
+      "Stop if you feel this in your lower back rather than your upper back."
+    ],
+    "easierVariation": "dumbbell-row",
+    "harderVariation": "inverted-row",
+    "substitutes": ["dumbbell-row", "inverted-row"],
+    "bodyweightSubstitute": "inverted-row",
+    "startingFraction": 0.18,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "inverted-row",
+    "name": "Inverted Row",
+    "movementPattern": "pull_horizontal",
+    "primaryMuscles": ["upper_back", "lats"],
+    "secondaryMuscles": ["biceps", "rear_delts", "core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Set up under a sturdy bar (or sturdy table edge) at roughly waist height.",
+      "Lie underneath, grab the bar with hands shoulder-width apart, palms facing forward or you.",
+      "Body forms a straight line, heels on the floor."
+    ],
+    "executionSteps": [
+      "Pull your chest up toward the bar.",
+      "Squeeze your shoulder blades together at the top.",
+      "Lower with control."
+    ],
+    "coachingCues": [
+      "Lower the bar (or raise your feet) to make it harder.",
+      "Squeeze the glutes — body stays as one straight piece.",
+      "Pull elbows to your hips, not your shoulders."
+    ],
+    "commonMistakes": [
+      "Hips sagging",
+      "Pulling chin to bar instead of chest"
+    ],
+    "easierVariation": "kneeling-push-up",
+    "harderVariation": "dumbbell-row",
+    "substitutes": ["dumbbell-row", "dumbbell-bent-over-row"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 5, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "lat-pulldown",
+    "name": "Lat Pulldown (Machine)",
+    "movementPattern": "pull_vertical",
+    "primaryMuscles": ["lats", "upper_back"],
+    "secondaryMuscles": ["biceps"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Sit at the lat pulldown machine, knees secured under the pad.",
+      "Grab the bar with hands slightly wider than shoulder-width, palms forward.",
+      "Sit tall, slight backward lean (~10°)."
+    ],
+    "executionSteps": [
+      "Pull the bar down toward your upper chest.",
+      "Squeeze your shoulder blades down and together.",
+      "Slowly let the bar return to full stretch overhead."
+    ],
+    "coachingCues": [
+      "Pull elbows down and back, not the bar with your hands.",
+      "Stop the bar at upper chest, not lower.",
+      "Don't lean back to use momentum."
+    ],
+    "commonMistakes": [
+      "Pulling the bar to the lap using lean and momentum",
+      "Flaring elbows wide",
+      "Going too heavy and losing position"
+    ],
+    "easierVariation": "inverted-row",
+    "harderVariation": "assisted-pull-up",
+    "substitutes": ["assisted-pull-up", "inverted-row"],
+    "bodyweightSubstitute": "inverted-row",
+    "startingFraction": 0.30,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 75
+  },
+  {
+    "id": "assisted-pull-up",
+    "name": "Assisted Pull-Up (Band or Machine)",
+    "movementPattern": "pull_vertical",
+    "primaryMuscles": ["lats", "upper_back"],
+    "secondaryMuscles": ["biceps", "core"],
+    "equipment": ["pull_up_bar", "resistance_band"],
+    "difficulty": 3,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Loop a resistance band over a pull-up bar; pull the loose end down through itself.",
+      "Place one foot or knee in the band loop for assistance.",
+      "Grip the bar with hands slightly wider than shoulder-width, palms forward.",
+      "(Or use the assisted pull-up machine with appropriate weight stack.)"
+    ],
+    "executionSteps": [
+      "Hang at full stretch.",
+      "Pull yourself up by driving the elbows down until your chin clears the bar.",
+      "Lower with control."
+    ],
+    "coachingCues": [
+      "Pull elbows down to your sides, not back.",
+      "Engage your back before your arms.",
+      "Use a thicker band for more help, thinner for less."
+    ],
+    "commonMistakes": [
+      "Kipping (using leg swing for momentum)",
+      "Stopping short of chin over bar"
+    ],
+    "easierVariation": "lat-pulldown",
+    "harderVariation": "lat-pulldown",
+    "substitutes": ["lat-pulldown", "inverted-row"],
+    "bodyweightSubstitute": "inverted-row",
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 4, "max": 8 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 90
+  },
+  {
+    "id": "kettlebell-swing",
+    "name": "Kettlebell Swing (Russian)",
+    "movementPattern": "hinge",
+    "primaryMuscles": ["glutes", "hamstrings"],
+    "secondaryMuscles": ["lower_back", "core", "shoulders"],
+    "equipment": ["kettlebell"],
+    "difficulty": 3,
+    "trackingType": "weight_reps",
+    "setupSteps": [
+      "Place a kettlebell on the floor about a foot in front of you.",
+      "Stand with feet just wider than shoulder-width.",
+      "Hinge at the hips, grab the kettlebell with both hands.",
+      "Tilt it slightly toward you so the handle is angled."
+    ],
+    "executionSteps": [
+      "Hike the kettlebell back between your legs (like snapping a football).",
+      "Snap your hips forward forcefully — the kettlebell floats up to about chest height on its own.",
+      "Don't lift it with your arms.",
+      "Let gravity bring it back down, hinge again, repeat."
+    ],
+    "coachingCues": [
+      "It's a hip snap, not a squat and not an arm raise.",
+      "Squeeze the glutes hard at the top.",
+      "Wrists stay neutral — no flopping."
+    ],
+    "commonMistakes": [
+      "Squatting the swing instead of hinging",
+      "Lifting with the arms",
+      "Going too high (above shoulder) before mastering form"
+    ],
+    "safetyNotes": [
+      "Master the hip hinge before swinging.",
+      "Use a clear space — at least 2m in front of you."
+    ],
+    "easierVariation": "hip-hinge-bodyweight",
+    "harderVariation": "dumbbell-romanian-deadlift",
+    "substitutes": ["dumbbell-romanian-deadlift", "hip-hinge-bodyweight"],
+    "bodyweightSubstitute": "glute-bridge",
+    "startingFraction": 0.15,
+    "defaultRepRange": { "min": 10, "max": 20 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "plank",
+    "name": "Forearm Plank",
+    "movementPattern": "core",
+    "primaryMuscles": ["core"],
+    "secondaryMuscles": ["glutes", "shoulders"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "timed",
+    "setupSteps": [
+      "Forearms on the floor, elbows under shoulders.",
+      "Legs extended straight back, toes on the floor.",
+      "Body forms a straight line from head to heels."
+    ],
+    "executionSteps": [
+      "Brace your core hard — imagine bracing for a punch.",
+      "Squeeze your glutes.",
+      "Hold the position for the target time."
+    ],
+    "coachingCues": [
+      "Hips in line with shoulders — no sagging, no piking.",
+      "Breathe normally — don't hold your breath.",
+      "Quality over duration — stop when form breaks."
+    ],
+    "commonMistakes": [
+      "Hips sagging",
+      "Hips piking up",
+      "Holding breath"
+    ],
+    "easierVariation": "dead-bug",
+    "harderVariation": "dead-bug",
+    "substitutes": ["dead-bug"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 20, "max": 60 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 45
+  },
+  {
+    "id": "dead-bug",
+    "name": "Dead Bug",
+    "movementPattern": "core",
+    "primaryMuscles": ["core"],
+    "secondaryMuscles": ["hip_flexors"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "reps_only",
+    "setupSteps": [
+      "Lie on your back, arms straight up over your shoulders.",
+      "Knees bent at 90° over your hips, shins parallel to the floor.",
+      "Lower back gently pressed into the floor."
+    ],
+    "executionSteps": [
+      "Slowly lower the opposite arm and opposite leg toward the floor — arm overhead, leg straight.",
+      "Stop just before lower back lifts off the floor.",
+      "Return to the start.",
+      "Alternate sides each rep."
+    ],
+    "coachingCues": [
+      "Lower back glued to the floor throughout.",
+      "Slow and controlled — this is harder than it looks.",
+      "Breathe out as you extend."
+    ],
+    "commonMistakes": [
+      "Lower back arching off the floor",
+      "Going too fast and losing control"
+    ],
+    "easierVariation": "plank",
+    "harderVariation": "plank",
+    "substitutes": ["plank"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 45
+  },
+  {
+    "id": "farmer-carry",
+    "name": "Farmer Carry",
+    "movementPattern": "carry",
+    "primaryMuscles": ["forearms", "upper_back", "core"],
+    "secondaryMuscles": ["glutes", "quads"],
+    "equipment": ["dumbbells"],
+    "difficulty": 2,
+    "trackingType": "distance",
+    "setupSteps": [
+      "Hold a dumbbell in each hand at your sides.",
+      "Stand tall — shoulders back, chest up, ribs down.",
+      "Have a clear path of at least 10–20m."
+    ],
+    "executionSteps": [
+      "Walk in a straight line at a controlled pace.",
+      "Steps short and steady — don't rush.",
+      "Keep tall posture throughout.",
+      "Walk for the target distance or time."
+    ],
+    "coachingCues": [
+      "Don't let the weights pull your shoulders forward.",
+      "Brace your core like you're walking with a tray of drinks.",
+      "Breathe steadily."
+    ],
+    "commonMistakes": [
+      "Slouching forward under the weight",
+      "Letting the dumbbells swing",
+      "Going too heavy too soon"
+    ],
+    "easierVariation": "plank",
+    "substitutes": ["plank"],
+    "bodyweightSubstitute": "plank",
+    "startingFraction": 0.20,
+    "defaultRepRange": { "min": 30, "max": 60 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 60
+  },
+  {
+    "id": "wall-sit",
+    "name": "Wall Sit",
+    "movementPattern": "squat",
+    "primaryMuscles": ["quads"],
+    "secondaryMuscles": ["glutes"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "timed",
+    "setupSteps": [
+      "Stand with your back flat against a wall.",
+      "Walk your feet out about 50cm in front of you, hip-width apart.",
+      "Slide down the wall until your thighs are parallel to the floor — knees at 90°."
+    ],
+    "executionSteps": [
+      "Hold the position for the target time.",
+      "Breathe steadily."
+    ],
+    "coachingCues": [
+      "Knees over ankles, not over toes.",
+      "Whole back stays in contact with the wall.",
+      "If 90° is too hard, sit a bit higher to start."
+    ],
+    "commonMistakes": [
+      "Knees collapsing inward",
+      "Hands resting on thighs (cheat)",
+      "Holding breath"
+    ],
+    "easierVariation": "box-squat",
+    "harderVariation": "bodyweight-squat",
+    "substitutes": ["box-squat", "bodyweight-squat"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 20, "max": 60 },
+    "defaultSets": 3,
+    "defaultRestSeconds": 45
+  },
+  {
+    "id": "cat-cow",
+    "name": "Cat-Cow",
+    "movementPattern": "mobility",
+    "primaryMuscles": ["spine"],
+    "secondaryMuscles": ["core"],
+    "equipment": ["bodyweight"],
+    "difficulty": 1,
+    "trackingType": "mobility",
+    "setupSteps": [
+      "Start on hands and knees — wrists under shoulders, knees under hips.",
+      "Spine in a neutral, flat-back position."
+    ],
+    "executionSteps": [
+      "Inhale: drop your belly toward the floor, lift your chest and tailbone (Cow).",
+      "Exhale: round your back toward the ceiling, tuck your chin and tailbone (Cat).",
+      "Move slowly with your breath for the target reps or time."
+    ],
+    "coachingCues": [
+      "Move from the spine, not just the head.",
+      "Breath leads the movement."
+    ],
+    "commonMistakes": [
+      "Rushing the tempo",
+      "Only moving the neck"
+    ],
+    "substitutes": [],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 8, "max": 12 },
+    "defaultSets": 1,
+    "defaultRestSeconds": 0
+  },
+  {
+    "id": "worlds-greatest-stretch",
+    "name": "World's Greatest Stretch",
+    "movementPattern": "mobility",
+    "primaryMuscles": ["hips", "thoracic_spine"],
+    "secondaryMuscles": ["hamstrings", "shoulders"],
+    "equipment": ["bodyweight"],
+    "difficulty": 2,
+    "trackingType": "mobility",
+    "setupSteps": [
+      "Start in a standing position with space in front of you."
+    ],
+    "executionSteps": [
+      "Step one foot forward into a deep lunge.",
+      "Place the same-side hand on the floor inside the front foot.",
+      "Reach the opposite hand up toward the ceiling, rotating the torso open.",
+      "Hold for 2 breaths.",
+      "Return and repeat on the other side."
+    ],
+    "coachingCues": [
+      "Try to lengthen, not just rotate.",
+      "Eyes follow the top hand."
+    ],
+    "commonMistakes": [
+      "Rushing the rotation",
+      "Back knee dropping all the way down (turn it into a lunge first, then rotate)"
+    ],
+    "substitutes": ["cat-cow"],
+    "startingFraction": 0,
+    "defaultRepRange": { "min": 5, "max": 8 },
+    "defaultSets": 1,
+    "defaultRestSeconds": 0
+  }
+]

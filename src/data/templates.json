@@ -1,0 +1,437 @@
+[
+  {
+    "id": "foundations-day-a",
+    "programId": "foundations-3day",
+    "dayLabel": "Day 1 — Full Body A",
+    "estimatedMinutes": 35,
+    "difficulty": 2,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "cat-cow", "sets": 1, "repRange": { "min": 8, "max": 10 }, "restSeconds": 0 },
+          { "exerciseId": "worlds-greatest-stretch", "sets": 1, "repRange": { "min": 4, "max": 6 }, "restSeconds": 0, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "goblet-squat", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 75 },
+          { "exerciseId": "dumbbell-bench-press", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-row", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 75, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "glute-bridge", "sets": 2, "repRange": { "min": 12, "max": 15 }, "restSeconds": 45 },
+          { "exerciseId": "plank", "sets": 2, "repRange": { "min": 20, "max": 45 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foundations-day-b",
+    "programId": "foundations-3day",
+    "dayLabel": "Day 2 — Full Body B",
+    "estimatedMinutes": 35,
+    "difficulty": 2,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "cat-cow", "sets": 1, "repRange": { "min": 8, "max": 10 }, "restSeconds": 0 },
+          { "exerciseId": "hip-hinge-bodyweight", "sets": 2, "repRange": { "min": 8, "max": 10 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-romanian-deadlift", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-shoulder-press", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-split-squat", "sets": 3, "repRange": { "min": 8, "max": 10 }, "restSeconds": 75, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "dead-bug", "sets": 2, "repRange": { "min": 8, "max": 12 }, "restSeconds": 45, "notes": "Each side" },
+          { "exerciseId": "farmer-carry", "sets": 2, "repRange": { "min": 30, "max": 45 }, "restSeconds": 60, "notes": "Seconds" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foundations-day-c",
+    "programId": "foundations-3day",
+    "dayLabel": "Day 3 — Full Body C",
+    "estimatedMinutes": 35,
+    "difficulty": 2,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "worlds-greatest-stretch", "sets": 1, "repRange": { "min": 4, "max": 6 }, "restSeconds": 0, "notes": "Each side" },
+          { "exerciseId": "glute-bridge", "sets": 2, "repRange": { "min": 10, "max": 12 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-hip-thrust", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 },
+          { "exerciseId": "kneeling-push-up", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 60 },
+          { "exerciseId": "inverted-row", "sets": 3, "repRange": { "min": 6, "max": 10 }, "restSeconds": 75 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "reverse-lunge", "sets": 2, "repRange": { "min": 8, "max": 10 }, "restSeconds": 45, "notes": "Each side" },
+          { "exerciseId": "plank", "sets": 2, "repRange": { "min": 20, "max": 45 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ul-upper-a",
+    "programId": "upper-lower-4day",
+    "dayLabel": "Day 1 — Upper A",
+    "estimatedMinutes": 45,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "cat-cow", "sets": 1, "repRange": { "min": 8, "max": 10 }, "restSeconds": 0 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-bench-press", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-row", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 75, "notes": "Each side" },
+          { "exerciseId": "dumbbell-shoulder-press", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "lat-pulldown", "sets": 3, "repRange": { "min": 10, "max": 12 }, "restSeconds": 60 },
+          { "exerciseId": "plank", "sets": 3, "repRange": { "min": 30, "max": 60 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ul-lower-a",
+    "programId": "upper-lower-4day",
+    "dayLabel": "Day 2 — Lower A",
+    "estimatedMinutes": 45,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "hip-hinge-bodyweight", "sets": 2, "repRange": { "min": 8, "max": 10 }, "restSeconds": 30 },
+          { "exerciseId": "glute-bridge", "sets": 2, "repRange": { "min": 10, "max": 12 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "goblet-squat", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-romanian-deadlift", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-split-squat", "sets": 3, "repRange": { "min": 8, "max": 10 }, "restSeconds": 75, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "dumbbell-hip-thrust", "sets": 3, "repRange": { "min": 10, "max": 12 }, "restSeconds": 75 },
+          { "exerciseId": "dead-bug", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 45, "notes": "Each side" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ul-upper-b",
+    "programId": "upper-lower-4day",
+    "dayLabel": "Day 3 — Upper B",
+    "estimatedMinutes": 45,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "worlds-greatest-stretch", "sets": 1, "repRange": { "min": 4, "max": 6 }, "restSeconds": 0, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-shoulder-press", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-bent-over-row", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "push-up", "sets": 3, "repRange": { "min": 6, "max": 12 }, "restSeconds": 75 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "dumbbell-lateral-raise", "sets": 3, "repRange": { "min": 12, "max": 15 }, "restSeconds": 60 },
+          { "exerciseId": "farmer-carry", "sets": 3, "repRange": { "min": 30, "max": 45 }, "restSeconds": 60, "notes": "Seconds" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ul-lower-b",
+    "programId": "upper-lower-4day",
+    "dayLabel": "Day 4 — Lower B",
+    "estimatedMinutes": 45,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "hip-hinge-bodyweight", "sets": 2, "repRange": { "min": 8, "max": 10 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-hip-thrust", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-reverse-lunge", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 75, "notes": "Each side" },
+          { "exerciseId": "kettlebell-swing", "sets": 3, "repRange": { "min": 12, "max": 15 }, "restSeconds": 75 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "single-leg-rdl", "sets": 3, "repRange": { "min": 6, "max": 10 }, "restSeconds": 60, "notes": "Each side" },
+          { "exerciseId": "wall-sit", "sets": 3, "repRange": { "min": 30, "max": 60 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ppl-push",
+    "programId": "ppl-3day",
+    "dayLabel": "Day 1 — Push",
+    "estimatedMinutes": 40,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "cat-cow", "sets": 1, "repRange": { "min": 8, "max": 10 }, "restSeconds": 0 },
+          { "exerciseId": "incline-push-up", "sets": 2, "repRange": { "min": 6, "max": 8 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-bench-press", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-shoulder-press", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 },
+          { "exerciseId": "push-up", "sets": 3, "repRange": { "min": 6, "max": 12 }, "restSeconds": 60 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "dumbbell-lateral-raise", "sets": 3, "repRange": { "min": 12, "max": 15 }, "restSeconds": 60 },
+          { "exerciseId": "plank", "sets": 2, "repRange": { "min": 30, "max": 60 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ppl-pull",
+    "programId": "ppl-3day",
+    "dayLabel": "Day 2 — Pull",
+    "estimatedMinutes": 40,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "cat-cow", "sets": 1, "repRange": { "min": 8, "max": 10 }, "restSeconds": 0 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "dumbbell-bent-over-row", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "lat-pulldown", "sets": 3, "repRange": { "min": 10, "max": 12 }, "restSeconds": 75 },
+          { "exerciseId": "dumbbell-row", "sets": 3, "repRange": { "min": 10, "max": 12 }, "restSeconds": 60, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "inverted-row", "sets": 3, "repRange": { "min": 6, "max": 10 }, "restSeconds": 60 },
+          { "exerciseId": "dead-bug", "sets": 2, "repRange": { "min": 8, "max": 12 }, "restSeconds": 45, "notes": "Each side" }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ppl-legs",
+    "programId": "ppl-3day",
+    "dayLabel": "Day 3 — Legs",
+    "estimatedMinutes": 45,
+    "difficulty": 3,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "hip-hinge-bodyweight", "sets": 2, "repRange": { "min": 8, "max": 10 }, "restSeconds": 30 },
+          { "exerciseId": "glute-bridge", "sets": 2, "repRange": { "min": 10, "max": 12 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "goblet-squat", "sets": 4, "repRange": { "min": 8, "max": 12 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-romanian-deadlift", "sets": 4, "repRange": { "min": 8, "max": 10 }, "restSeconds": 90 },
+          { "exerciseId": "dumbbell-hip-thrust", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 75 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "dumbbell-split-squat", "sets": 3, "repRange": { "min": 8, "max": 10 }, "restSeconds": 60, "notes": "Each side" },
+          { "exerciseId": "kettlebell-swing", "sets": 3, "repRange": { "min": 12, "max": 15 }, "restSeconds": 60 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "home-minimal-a",
+    "programId": "home-minimal-3day",
+    "dayLabel": "Day 1 — Full Body A",
+    "estimatedMinutes": 25,
+    "difficulty": 1,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "cat-cow", "sets": 1, "repRange": { "min": 8, "max": 10 }, "restSeconds": 0 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "bodyweight-squat", "sets": 3, "repRange": { "min": 10, "max": 15 }, "restSeconds": 60 },
+          { "exerciseId": "incline-push-up", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 60 },
+          { "exerciseId": "inverted-row", "sets": 3, "repRange": { "min": 5, "max": 10 }, "restSeconds": 60 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "glute-bridge", "sets": 2, "repRange": { "min": 12, "max": 15 }, "restSeconds": 45 },
+          { "exerciseId": "plank", "sets": 2, "repRange": { "min": 20, "max": 45 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "home-minimal-b",
+    "programId": "home-minimal-3day",
+    "dayLabel": "Day 2 — Full Body B",
+    "estimatedMinutes": 25,
+    "difficulty": 1,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "hip-hinge-bodyweight", "sets": 2, "repRange": { "min": 8, "max": 10 }, "restSeconds": 30 }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "reverse-lunge", "sets": 3, "repRange": { "min": 10, "max": 12 }, "restSeconds": 60, "notes": "Each side" },
+          { "exerciseId": "kneeling-push-up", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 60 },
+          { "exerciseId": "single-leg-rdl", "sets": 3, "repRange": { "min": 6, "max": 10 }, "restSeconds": 60, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "dead-bug", "sets": 2, "repRange": { "min": 8, "max": 12 }, "restSeconds": 45, "notes": "Each side" },
+          { "exerciseId": "wall-sit", "sets": 2, "repRange": { "min": 20, "max": 45 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "home-minimal-c",
+    "programId": "home-minimal-3day",
+    "dayLabel": "Day 3 — Full Body C",
+    "estimatedMinutes": 25,
+    "difficulty": 1,
+    "blocks": [
+      {
+        "id": "warmup",
+        "type": "warmup",
+        "exercises": [
+          { "exerciseId": "worlds-greatest-stretch", "sets": 1, "repRange": { "min": 4, "max": 6 }, "restSeconds": 0, "notes": "Each side" }
+        ]
+      },
+      {
+        "id": "main",
+        "type": "main",
+        "exercises": [
+          { "exerciseId": "split-squat", "sets": 3, "repRange": { "min": 8, "max": 12 }, "restSeconds": 60, "notes": "Each side" },
+          { "exerciseId": "pike-push-up", "sets": 3, "repRange": { "min": 5, "max": 10 }, "restSeconds": 60 },
+          { "exerciseId": "inverted-row", "sets": 3, "repRange": { "min": 5, "max": 10 }, "restSeconds": 60 }
+        ]
+      },
+      {
+        "id": "accessory",
+        "type": "accessory",
+        "exercises": [
+          { "exerciseId": "glute-bridge", "sets": 3, "repRange": { "min": 12, "max": 20 }, "restSeconds": 45 },
+          { "exerciseId": "plank", "sets": 2, "repRange": { "min": 20, "max": 45 }, "restSeconds": 45 }
+        ]
+      }
+    ]
+  }
+]

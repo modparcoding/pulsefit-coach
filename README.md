@@ -15,6 +15,8 @@ Implemented foundation:
 - Repository interface
 - LocalStorage repository with schema versioning, export, and import
 - Unit tests for the repository layer
+- Static exercise, program, and template content
+- Content lookup helpers and integrity tests
 
 ## Run locally
 
