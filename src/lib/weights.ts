@@ -49,6 +49,38 @@ export function estimateStartingWeight(
   return available.filter((weight) => weight <= target).at(-1) ?? available[0];
 }
 
+export function incrementWeight(
+  currentWeight: number | undefined,
+  exercise: Pick<Exercise, "equipment">,
+  equipment: EquipmentProfile | null,
+  jumps = 1,
+): number | undefined {
+  const available = availableWeightsForExercise(exercise, equipment);
+  if (!available.length) return currentWeight;
+  if (typeof currentWeight !== "number") return available[0];
+
+  let nextWeight = currentWeight;
+  for (let index = 0; index < jumps; index += 1) {
+    const candidate = available.find((weight) => weight > nextWeight);
+    if (!candidate) return nextWeight;
+    nextWeight = candidate;
+  }
+  return nextWeight;
+}
+
+export function decrementWeight(
+  currentWeight: number | undefined,
+  exercise: Pick<Exercise, "equipment">,
+  equipment: EquipmentProfile | null,
+): number | undefined {
+  const available = availableWeightsForExercise(exercise, equipment);
+  if (!available.length) return currentWeight;
+  if (typeof currentWeight !== "number") return available[0];
+
+  const lowerWeights = available.filter((weight) => weight < currentWeight);
+  return lowerWeights.at(-1) ?? available[0];
+}
+
 export function nextDefaultEffort(previous?: EffortBand): EffortBand {
   return previous ?? "just_right";
 }

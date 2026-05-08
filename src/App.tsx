@@ -10,6 +10,11 @@ import {
 } from "@/lib/content";
 import { LocalStorageRepository } from "@/lib/localStorageRepository";
 import {
+  buildProgressionState,
+  getLastExerciseResult,
+  recommendExercise,
+} from "@/lib/progression";
+import {
   DEFAULT_DRAFT,
   type OnboardingDraft,
   createHomeEquipmentProfile,
@@ -25,6 +30,7 @@ import type {
   InjuryFlag,
   PlannedExercise,
   Program,
+  ProgressionRecommendation,
   SetResult,
   UserProfile,
   Weekday,
@@ -815,6 +821,9 @@ function GuidedWorkout({
   const [repsInput, setRepsInput] = useState("");
   const [weightInput, setWeightInput] = useState("");
   const [effort, setEffort] = useState<EffortBand>("just_right");
+  const [recommendations, setRecommendations] = useState<
+    Record<string, ProgressionRecommendation>
+  >({});
   const [overallEffort, setOverallEffort] = useState<
     1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10
   >(7);
@@ -829,9 +838,20 @@ function GuidedWorkout({
     ? getExercise(nextPlannedExercise.exerciseId)
     : null;
   const activeEquipment = profile.equipment[context];
-  const suggestedWeight = exercise
-    ? estimateStartingWeight(exercise, activeEquipment, profile.experienceLevel)
+  const recommendation = plannedExercise
+    ? recommendations[plannedExercise.exerciseId]
     : undefined;
+  const suggestedRepRange =
+    recommendation?.suggestedReps ?? plannedExercise?.repRange;
+  const suggestedWeight =
+    recommendation?.suggestedWeight ??
+    (exercise
+      ? estimateStartingWeight(
+          exercise,
+          activeEquipment,
+          profile.experienceLevel,
+        )
+      : undefined);
   const currentResult = plannedExercise
     ? results.find((result) => result.exerciseId === plannedExercise.exerciseId)
     : undefined;
@@ -845,10 +865,47 @@ function GuidedWorkout({
 
   useEffect(() => {
     if (!plannedExercise) return;
-    setRepsInput(String(plannedExercise.repRange.max));
+    setRepsInput(
+      String(suggestedRepRange?.max ?? plannedExercise.repRange.max),
+    );
     setWeightInput(suggestedWeight ? String(suggestedWeight) : "");
     setEffort("just_right");
-  }, [exerciseIndex, plannedExercise, setIndex, suggestedWeight]);
+  }, [
+    exerciseIndex,
+    plannedExercise,
+    setIndex,
+    suggestedRepRange?.max,
+    suggestedWeight,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRecommendations() {
+      const sessions = await repository.listSessions({ limit: 100 });
+      const nextRecommendations: Record<string, ProgressionRecommendation> = {};
+
+      for (const item of plannedExercises) {
+        const itemExercise = getExercise(item.exerciseId);
+        if (!itemExercise) continue;
+
+        nextRecommendations[item.exerciseId] = recommendExercise({
+          equipment: activeEquipment,
+          exercise: itemExercise,
+          experienceLevel: profile.experienceLevel,
+          lastResult: getLastExerciseResult(sessions, item.exerciseId),
+          plannedExercise: item,
+        });
+      }
+
+      if (!cancelled) setRecommendations(nextRecommendations);
+    }
+
+    loadRecommendations();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeEquipment, plannedExercises, profile.experienceLevel]);
 
   function upsertResult(nextResult: LoggedExercise) {
     setResults((current) => [
@@ -878,7 +935,7 @@ function GuidedWorkout({
       : undefined;
     const nextSet: SetResult = {
       setNumber: setIndex + 1,
-      targetReps: plannedExercise.repRange,
+      targetReps: suggestedRepRange ?? plannedExercise.repRange,
       actualReps,
       targetWeight: suggestedWeight,
       actualWeight,
@@ -955,6 +1012,28 @@ function GuidedWorkout({
       painReported: exerciseResults.some((result) => result.outcome === "pain"),
       exerciseResults,
     });
+    for (const result of exerciseResults) {
+      const item = plannedExercises.find(
+        (planned) => planned.exerciseId === result.exerciseId,
+      );
+      if (!item || result.setResults.length === 0) continue;
+
+      const lastState = await repository.getProgressionState(result.exerciseId);
+      await repository.saveProgressionState(
+        buildProgressionState({
+          exerciseId: result.exerciseId,
+          lastState,
+          plannedExercise: item,
+          recommendation: recommendations[result.exerciseId] ?? {
+            action: "hold",
+            suggestedReps: item.repRange,
+            reason: "Saved from this workout.",
+          },
+          result,
+          sessionCompletedAt: now,
+        }),
+      );
+    }
     setIsSaving(false);
     onExit(
       `Workout saved. ${completedSetCount} sets were logged across ${plannedExercises.length} exercises.`,
@@ -1109,13 +1188,21 @@ function GuidedWorkout({
           </p>
           <p className="mt-2 text-lg font-black text-stone-900">
             {suggestedWeight
-              ? `${suggestedWeight}${profile.units} × ${plannedExercise?.repRange.min}-${plannedExercise?.repRange.max}`
-              : `${plannedExercise?.repRange.min}-${plannedExercise?.repRange.max} reps with clean form`}
+              ? `${suggestedWeight}${profile.units} × ${suggestedRepRange?.min}-${suggestedRepRange?.max}`
+              : `${suggestedRepRange?.min}-${suggestedRepRange?.max} reps with clean form`}
           </p>
           <p className="mt-2 text-sm font-bold leading-6 text-stone-500">
-            First pass uses conservative starting weights. Once there is
-            history, this will use the last session.
+            {recommendation?.reason ??
+              "Start conservative and let the app calibrate from today."}
           </p>
+          {recommendation?.action === "substitute" &&
+            recommendation.substituteExerciseId && (
+              <p className="mt-3 rounded-lg bg-orange-50 p-3 text-sm font-black text-orange-950">
+                Suggested swap:{" "}
+                {getExercise(recommendation.substituteExerciseId)?.name ??
+                  recommendation.substituteExerciseId}
+              </p>
+            )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -1395,8 +1482,8 @@ function ProgressScreen() {
       </section>
       {latestTemplate && (
         <p className="rounded-lg bg-emerald-50 p-4 font-bold leading-7 text-emerald-950">
-          Last saved: {latestTemplate.dayLabel}. The weight-by-set progression
-          engine is the next major build step.
+          Last saved: {latestTemplate.dayLabel}. The next workout will use these
+          set logs for calmer weight and rep suggestions.
         </p>
       )}
     </section>

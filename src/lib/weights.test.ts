@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { EquipmentProfile, Exercise } from "@/types";
-import { availableWeightsForExercise, estimateStartingWeight } from "./weights";
+import {
+  availableWeightsForExercise,
+  decrementWeight,
+  estimateStartingWeight,
+  incrementWeight,
+} from "./weights";
 
 const dumbbellExercise = {
   equipment: ["dumbbells"],
@@ -47,5 +52,13 @@ describe("weight helpers", () => {
         "beginner",
       ),
     ).toBeUndefined();
+  });
+
+  it("increments to the next available weight", () => {
+    expect(incrementWeight(8, dumbbellExercise, fixedEquipment)).toBe(12);
+  });
+
+  it("decrements to the previous available weight", () => {
+    expect(decrementWeight(8, dumbbellExercise, fixedEquipment)).toBe(5);
   });
 });
