@@ -32,6 +32,7 @@ import type {
   EquipmentRequirement,
   Exercise,
   ExerciseOutcome,
+  ExerciseResult,
   Goal,
   InjuryFlag,
   MovementPattern,
@@ -2204,6 +2205,7 @@ function LibraryScreen({ profile }: { profile: UserProfile }) {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(
     null,
   );
+  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const contextOptions = [
     profile.equipment.home ? ("home" as const) : null,
     profile.equipment.gym ? ("gym" as const) : null,
@@ -2231,6 +2233,13 @@ function LibraryScreen({ profile }: { profile: UserProfile }) {
       (exercise) =>
         equipment === "all" || exercise.equipment.includes(equipment),
     );
+  const selectedExerciseLastResult = selectedExercise
+    ? findLastExerciseResult(sessions, selectedExercise.id)
+    : null;
+
+  useEffect(() => {
+    repository.listSessions({ limit: 100 }).then(setSessions);
+  }, []);
 
   if (quickTemplate) {
     return (
@@ -2354,6 +2363,7 @@ function LibraryScreen({ profile }: { profile: UserProfile }) {
       {selectedExercise && (
         <ExerciseDetailPanel
           exercise={selectedExercise}
+          lastResult={selectedExerciseLastResult}
           onClose={() => setSelectedExercise(null)}
           onStartQuickWorkout={(exercise) => {
             setSelectedExercise(null);
@@ -2919,10 +2929,12 @@ function StrengthSparkline({ points }: { points: StrengthPoint[] }) {
 
 function ExerciseDetailPanel({
   exercise,
+  lastResult,
   onClose,
   onStartQuickWorkout,
 }: {
   exercise: Exercise;
+  lastResult?: ExerciseResult | null;
   onClose: () => void;
   onStartQuickWorkout?: (exercise: Exercise) => void;
 }) {
@@ -2958,6 +2970,17 @@ function ExerciseDetailPanel({
           >
             Start quick session
           </button>
+        )}
+
+        {lastResult && (
+          <div className="rounded-lg bg-emerald-50 p-4">
+            <p className="text-sm font-black uppercase tracking-wide text-emerald-950">
+              Last time
+            </p>
+            <p className="mt-2 font-bold leading-6 text-emerald-950">
+              {exerciseResultSummary(lastResult)}
+            </p>
+          </div>
         )}
 
         <GuidanceList title="Setup" items={exercise.setupSteps} />
@@ -3278,6 +3301,35 @@ function sessionVolume(session: WorkoutSession): number {
       (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
       0,
     );
+}
+
+function findLastExerciseResult(
+  sessions: WorkoutSession[],
+  exerciseId: string,
+): ExerciseResult | null {
+  for (const session of sessions) {
+    const result = session.exerciseResults.find(
+      (exerciseResult) => exerciseResult.exerciseId === exerciseId,
+    );
+    if (result) return result;
+  }
+
+  return null;
+}
+
+function exerciseResultSummary(result: ExerciseResult): string {
+  if (!result.setResults.length) {
+    return `Outcome: ${result.outcome.replaceAll("_", " ")}`;
+  }
+
+  const setSummary = result.setResults
+    .map(
+      (set) =>
+        `${set.actualReps} reps${set.actualWeight ? ` @ ${set.actualWeight}${set.unit}` : ""}`,
+    )
+    .join(", ");
+
+  return `${setSummary} · ${result.outcome.replaceAll("_", " ")}`;
 }
 
 function formatRestTime(seconds: number): string {
