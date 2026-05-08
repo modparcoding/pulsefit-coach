@@ -800,11 +800,17 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
 }
 
 type LoggedExercise = {
+  instanceId: string;
   exerciseId: string;
   outcome: ExerciseOutcome;
   painArea?: InjuryFlag["area"];
   substitutedFrom?: string;
   setResults: SetResult[];
+};
+
+type ResolvedPlannedExercise = PlannedExercise & {
+  instanceId: string;
+  substitutedFrom?: string;
 };
 
 function GuidedWorkout({
@@ -818,9 +824,19 @@ function GuidedWorkout({
   profile: UserProfile;
   template: WorkoutTemplate;
 }) {
+  const activeEquipment = profile.equipment[context];
   const plannedExercises = useMemo(
-    () => flattenTemplateExercises(template),
-    [template],
+    () =>
+      flattenTemplateExercises(template)
+        .map((item, index) =>
+          resolvePlannedExercise(
+            item,
+            activeEquipment,
+            `${item.exerciseId}-${index}`,
+          ),
+        )
+        .filter((item): item is ResolvedPlannedExercise => Boolean(item)),
+    [activeEquipment, template],
   );
   const [startedAt] = useState(() => new Date().toISOString());
   const [exerciseIndex, setExerciseIndex] = useState(0);
@@ -849,7 +865,6 @@ function GuidedWorkout({
   const nextExercise = nextPlannedExercise
     ? getExercise(nextPlannedExercise.exerciseId)
     : null;
-  const activeEquipment = profile.equipment[context];
   const recommendation = plannedExercise
     ? recommendations[plannedExercise.exerciseId]
     : undefined;
@@ -865,7 +880,7 @@ function GuidedWorkout({
         )
       : undefined);
   const currentResult = plannedExercise
-    ? results.find((result) => result.exerciseId === plannedExercise.exerciseId)
+    ? results.find((result) => result.instanceId === plannedExercise.instanceId)
     : undefined;
   const loggedSets = currentResult?.setResults ?? [];
   const totalSets = plannedExercise?.sets ?? 0;
@@ -922,7 +937,7 @@ function GuidedWorkout({
   function upsertResult(nextResult: LoggedExercise) {
     setResults((current) => [
       ...current.filter(
-        (result) => result.exerciseId !== nextResult.exerciseId,
+        (result) => result.instanceId !== nextResult.instanceId,
       ),
       nextResult,
     ]);
@@ -962,9 +977,11 @@ function GuidedWorkout({
     ].sort((a, b) => a.setNumber - b.setNumber);
 
     upsertResult({
+      instanceId: plannedExercise.instanceId,
       exerciseId: plannedExercise.exerciseId,
       outcome:
         nextSetResults.length >= plannedExercise.sets ? "completed" : "partial",
+      substitutedFrom: plannedExercise.substitutedFrom,
       setResults: nextSetResults,
     });
 
@@ -979,8 +996,10 @@ function GuidedWorkout({
   function logExercise(outcome: ExerciseOutcome) {
     if (!plannedExercise) return;
     upsertResult({
+      instanceId: plannedExercise.instanceId,
       exerciseId: plannedExercise.exerciseId,
       outcome,
+      substitutedFrom: plannedExercise.substitutedFrom,
       setResults: loggedSets,
     });
     advanceAfterExercise();
@@ -989,9 +1008,11 @@ function GuidedWorkout({
   function logPain() {
     if (!plannedExercise) return;
     upsertResult({
+      instanceId: plannedExercise.instanceId,
       exerciseId: plannedExercise.exerciseId,
       outcome: "pain",
       painArea,
+      substitutedFrom: plannedExercise.substitutedFrom,
       setResults: loggedSets,
     });
     advanceAfterExercise();
@@ -1000,7 +1021,7 @@ function GuidedWorkout({
   function finalExerciseResults(sessionId: string) {
     return plannedExercises.map((item, index) => {
       const result = results.find(
-        (logged) => logged.exerciseId === item.exerciseId,
+        (logged) => logged.instanceId === item.instanceId,
       );
       return {
         id: `${sessionId}-${index + 1}`,
@@ -1037,10 +1058,8 @@ function GuidedWorkout({
       painReported: exerciseResults.some((result) => result.outcome === "pain"),
       exerciseResults,
     });
-    for (const result of exerciseResults) {
-      const item = plannedExercises.find(
-        (planned) => planned.exerciseId === result.exerciseId,
-      );
+    for (const [index, result] of exerciseResults.entries()) {
+      const item = plannedExercises[index];
       if (!item || result.setResults.length === 0) continue;
 
       const lastState = await repository.getProgressionState(result.exerciseId);
@@ -1062,6 +1081,35 @@ function GuidedWorkout({
     setIsSaving(false);
     onExit(
       `Workout saved. ${completedSetCount} sets were logged across ${plannedExercises.length} exercises.`,
+    );
+  }
+
+  if (!plannedExercise) {
+    return (
+      <section className="flex flex-1 flex-col justify-center gap-5">
+        <header>
+          <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+            No exercises available
+          </p>
+          <h1 className="mt-2 text-4xl font-black leading-tight">
+            This workout does not fit the selected equipment.
+          </h1>
+          <p className="mt-2 leading-7 text-stone-600">
+            Try switching context or editing equipment in Settings.
+          </p>
+        </header>
+        <button
+          className="min-h-12 rounded-lg bg-emerald-900 px-4 font-black text-white"
+          onClick={() =>
+            onExit(
+              "No available exercises for that context. Try a different setup.",
+            )
+          }
+          type="button"
+        >
+          Back to today
+        </button>
+      </section>
     );
   }
 
@@ -1315,6 +1363,12 @@ function GuidedWorkout({
           {plannedExercise?.repRange.max} reps. Rest{" "}
           {plannedExercise?.restSeconds}s after this exercise.
         </p>
+        {plannedExercise?.substitutedFrom && (
+          <p className="mt-3 rounded-lg bg-orange-50 p-3 text-sm font-black leading-6 text-orange-950">
+            Swapped from {getExercise(plannedExercise.substitutedFrom)?.name} —
+            equipment not available in {context} mode.
+          </p>
+        )}
       </header>
 
       <article className="space-y-5 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
@@ -2531,6 +2585,53 @@ function flattenTemplateExercises(
   template: WorkoutTemplate,
 ): PlannedExercise[] {
   return template.blocks.flatMap((block) => block.exercises);
+}
+
+function resolvePlannedExercise(
+  plannedExercise: PlannedExercise,
+  equipment: UserProfile["equipment"]["home"],
+  instanceId: string,
+): ResolvedPlannedExercise | null {
+  const exercise = getExercise(plannedExercise.exerciseId);
+  if (!exercise) return null;
+  if (exerciseCanBePerformed(exercise, equipment)) {
+    return { ...plannedExercise, instanceId };
+  }
+
+  const substituteIds = [
+    exercise.bodyweightSubstitute,
+    ...exercise.substitutes,
+  ].filter((id): id is string => Boolean(id));
+  const substitute = substituteIds
+    .map((id) => getExercise(id))
+    .find((candidate): candidate is Exercise =>
+      Boolean(candidate && exerciseCanBePerformed(candidate, equipment)),
+    );
+
+  if (!substitute) return null;
+  return {
+    ...plannedExercise,
+    exerciseId: substitute.id,
+    instanceId,
+    substitutedFrom: exercise.id,
+  };
+}
+
+function exerciseCanBePerformed(
+  exercise: Exercise,
+  equipment: UserProfile["equipment"]["home"],
+): boolean {
+  return exercise.equipment.every((requirement) => {
+    if (requirement === "bodyweight") return true;
+    if (!equipment) return false;
+    if (requirement === "dumbbells") return equipment.dumbbells.kind !== "none";
+    if (requirement === "barbell") return Boolean(equipment.barbell);
+    if (requirement === "kettlebell") return equipment.kettlebells.length > 0;
+    if (requirement === "bench") return equipment.bench;
+    if (requirement === "pull_up_bar") return equipment.pullUpBar;
+    if (requirement === "resistance_band") return equipment.resistanceBands;
+    return false;
+  });
 }
 
 function getVariationName(id?: string): string | null {
