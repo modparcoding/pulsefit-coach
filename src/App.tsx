@@ -932,6 +932,7 @@ function GuidedWorkout({
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [restRemaining, setRestRemaining] = useState(60);
   const plannedExercise = plannedExercises[exerciseIndex];
   const exercise = plannedExercise
     ? getExercise(plannedExercise.exerciseId)
@@ -1075,6 +1076,26 @@ function GuidedWorkout({
     template.id,
   ]);
 
+  useEffect(() => {
+    if (phase === "rest") {
+      setRestRemaining(plannedExercise?.restSeconds ?? 60);
+    }
+  }, [phase, plannedExercise?.restSeconds]);
+
+  useEffect(() => {
+    if (phase !== "rest") return;
+    if (restRemaining <= 0) {
+      continueAfterRest();
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setRestRemaining((current) => Math.max(current - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timeout);
+  }, [phase, restRemaining]);
+
   function upsertResult(nextResult: LoggedExercise) {
     setResults((current) => [
       ...current.filter(
@@ -1092,6 +1113,13 @@ function GuidedWorkout({
     }
 
     setPhase("rest");
+  }
+
+  function continueAfterRest() {
+    setExerciseIndex((current) =>
+      Math.min(current + 1, plannedExercises.length - 1),
+    );
+    setPhase("exercise");
   }
 
   function saveSet() {
@@ -1458,8 +1486,11 @@ function GuidedWorkout({
             Rest
           </p>
           <h1 className="mt-2 text-5xl font-black leading-tight">
-            {plannedExercise?.restSeconds ?? 60}s
+            {formatRestTime(restRemaining)}
           </h1>
+          <p className="mt-2 leading-7 text-stone-600">
+            Breathe, shake out your hands, and get ready for the next movement.
+          </p>
         </header>
         <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <p className="text-sm font-black uppercase tracking-wide text-stone-500">
@@ -1478,13 +1509,17 @@ function GuidedWorkout({
         </article>
         <button
           className="min-h-12 rounded-lg bg-emerald-900 px-4 font-black text-white"
-          onClick={() => {
-            setExerciseIndex((current) => current + 1);
-            setPhase("exercise");
-          }}
+          onClick={continueAfterRest}
           type="button"
         >
           Continue
+        </button>
+        <button
+          className="min-h-12 rounded-lg bg-stone-200 px-4 font-black text-stone-700"
+          onClick={continueAfterRest}
+          type="button"
+        >
+          Skip rest
         </button>
       </section>
     );
@@ -3146,6 +3181,13 @@ function sessionVolume(session: WorkoutSession): number {
       (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
       0,
     );
+}
+
+function formatRestTime(seconds: number): string {
+  const safeSeconds = Math.max(seconds, 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 function optionalNumber(value: string): number | undefined {
