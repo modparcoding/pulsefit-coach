@@ -3,6 +3,7 @@ import type {
   DailyCheckIn,
   ExerciseProgressionState,
   UserProfile,
+  WorkoutDraft,
   WorkoutSession,
 } from "../types";
 
@@ -16,6 +17,9 @@ export interface Repository {
     limit?: number;
     since?: string;
   }): Promise<WorkoutSession[]>;
+  getWorkoutDraft(): Promise<WorkoutDraft | null>;
+  saveWorkoutDraft(draft: WorkoutDraft): Promise<void>;
+  clearWorkoutDraft(): Promise<void>;
 
   getProgressionState(
     exerciseId: string,
@@ -43,6 +47,7 @@ export const STORAGE_KEYS = {
   session: (id: string) => `fc:session:${id}`,
   sessionsIndex: "fc:sessions:index",
   progression: (exerciseId: string) => `fc:progression:${exerciseId}`,
+  workoutDraft: "fc:workout:draft",
   bodyMetrics: "fc:metrics:body",
   checkIns: "fc:metrics:checkin",
   meta: "fc:meta",

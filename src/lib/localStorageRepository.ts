@@ -3,6 +3,7 @@ import type {
   DailyCheckIn,
   ExerciseProgressionState,
   UserProfile,
+  WorkoutDraft,
   WorkoutSession,
 } from "../types";
 import {
@@ -17,6 +18,7 @@ type ExportPayload = {
   profile: UserProfile | null;
   sessions: WorkoutSession[];
   progression: ExerciseProgressionState[];
+  workoutDraft: WorkoutDraft | null;
   bodyMetrics: BodyMetric[];
   checkIns: DailyCheckIn[];
 };
@@ -61,6 +63,18 @@ export class LocalStorageRepository implements Repository {
     return typeof options.limit === "number"
       ? sessions.slice(0, options.limit)
       : sessions;
+  }
+
+  async getWorkoutDraft(): Promise<WorkoutDraft | null> {
+    return this.read<WorkoutDraft | null>(STORAGE_KEYS.workoutDraft, null);
+  }
+
+  async saveWorkoutDraft(draft: WorkoutDraft): Promise<void> {
+    this.write(STORAGE_KEYS.workoutDraft, draft);
+  }
+
+  async clearWorkoutDraft(): Promise<void> {
+    this.storage.removeItem(STORAGE_KEYS.workoutDraft);
   }
 
   async getProgressionState(
@@ -132,6 +146,7 @@ export class LocalStorageRepository implements Repository {
       profile: await this.getProfile(),
       sessions,
       progression,
+      workoutDraft: await this.getWorkoutDraft(),
       bodyMetrics: await this.listBodyMetrics(),
       checkIns: await this.listCheckIns(),
     };
@@ -162,6 +177,8 @@ export class LocalStorageRepository implements Repository {
     for (const state of payload.progression ?? []) {
       await this.saveProgressionState(state);
     }
+
+    if (payload.workoutDraft) await this.saveWorkoutDraft(payload.workoutDraft);
 
     this.write(STORAGE_KEYS.bodyMetrics, payload.bodyMetrics ?? []);
     this.write(STORAGE_KEYS.checkIns, payload.checkIns ?? []);

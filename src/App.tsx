@@ -41,6 +41,7 @@ import type {
   SetResult,
   UserProfile,
   Weekday,
+  WorkoutDraft,
   WorkoutSession,
   WorkoutTemplate,
 } from "@/types";
@@ -664,6 +665,16 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
   );
   const [coachNote, setCoachNote] = useState("");
   const [activeWorkout, setActiveWorkout] = useState(false);
+  const [savedDraft, setSavedDraft] = useState<WorkoutDraft | null>(null);
+  const canResumeDraft =
+    Boolean(template) &&
+    savedDraft?.userId === profile.id &&
+    savedDraft?.templateId === template?.id &&
+    savedDraft?.context === context;
+
+  useEffect(() => {
+    repository.getWorkoutDraft().then(setSavedDraft);
+  }, [activeWorkout]);
 
   if (template && activeWorkout) {
     return (
@@ -751,6 +762,15 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
           >
             {template ? "Start workout" : "View next workout"}
           </button>
+          {canResumeDraft && (
+            <button
+              className="min-h-12 w-full rounded-lg bg-orange-50 px-4 font-black text-orange-950"
+              onClick={() => setActiveWorkout(true)}
+              type="button"
+            >
+              Resume saved workout
+            </button>
+          )}
           <button
             className="min-h-12 w-full rounded-lg bg-emerald-50 px-4 font-black text-emerald-950"
             onClick={() =>
@@ -894,12 +914,10 @@ function GuidedWorkout({
         .filter((item): item is ResolvedPlannedExercise => Boolean(item)),
     [activeEquipment, template],
   );
-  const [startedAt] = useState(() => new Date().toISOString());
+  const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [setIndex, setSetIndex] = useState(0);
-  const [phase, setPhase] = useState<
-    "exercise" | "pain" | "too_hard" | "rest" | "complete"
-  >("exercise");
+  const [phase, setPhase] = useState<WorkoutDraft["phase"]>("exercise");
   const [results, setResults] = useState<LoggedExercise[]>([]);
   const [repsInput, setRepsInput] = useState("");
   const [weightInput, setWeightInput] = useState("");
@@ -913,6 +931,7 @@ function GuidedWorkout({
   >(7);
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const plannedExercise = plannedExercises[exerciseIndex];
   const exercise = plannedExercise
     ? getExercise(plannedExercise.exerciseId)
@@ -989,6 +1008,72 @@ function GuidedWorkout({
       cancelled = true;
     };
   }, [activeEquipment, plannedExercises, profile.experienceLevel]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDraftLoaded(false);
+
+    async function loadDraft() {
+      const draft = await repository.getWorkoutDraft();
+      if (cancelled) return;
+
+      if (
+        draft?.userId === profile.id &&
+        draft.templateId === template.id &&
+        draft.context === context
+      ) {
+        setStartedAt(draft.startedAt);
+        setExerciseIndex(
+          Math.min(
+            draft.exerciseIndex,
+            Math.max(plannedExercises.length - 1, 0),
+          ),
+        );
+        setSetIndex(Math.max(draft.setIndex, 0));
+        setPhase(draft.phase);
+        setResults(draft.results);
+        setOverallEffort(draft.overallEffort ?? 7);
+        setNotes(draft.notes ?? "");
+      }
+
+      setDraftLoaded(true);
+    }
+
+    loadDraft();
+    return () => {
+      cancelled = true;
+    };
+  }, [context, plannedExercises.length, profile.id, template.id]);
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+
+    repository.saveWorkoutDraft({
+      userId: profile.id,
+      templateId: template.id,
+      context,
+      startedAt,
+      exerciseIndex,
+      setIndex,
+      phase,
+      results,
+      overallEffort,
+      notes: notes.trim() || undefined,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [
+    context,
+    draftLoaded,
+    exerciseIndex,
+    overallEffort,
+    notes,
+    phase,
+    profile.id,
+    results,
+    setIndex,
+    startedAt,
+    template.id,
+  ]);
 
   function upsertResult(nextResult: LoggedExercise) {
     setResults((current) => [
@@ -1134,6 +1219,7 @@ function GuidedWorkout({
         }),
       );
     }
+    await repository.clearWorkoutDraft();
     setIsSaving(false);
     onExit(
       `Workout saved. ${completedSetCount} sets were logged across ${plannedExercises.length} exercises.`,

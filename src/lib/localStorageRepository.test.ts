@@ -3,6 +3,7 @@ import type {
   BodyMetric,
   DailyCheckIn,
   UserProfile,
+  WorkoutDraft,
   WorkoutSession,
 } from "../types";
 import { LocalStorageRepository } from "./localStorageRepository";
@@ -45,6 +46,18 @@ const session: WorkoutSession = {
   overallEffort: 7,
   painReported: false,
   exerciseResults: [],
+};
+
+const draft: WorkoutDraft = {
+  userId: "user-1",
+  templateId: "foundations-a",
+  context: "home",
+  startedAt: "2026-05-08T09:00:00.000Z",
+  exerciseIndex: 1,
+  setIndex: 0,
+  phase: "exercise",
+  results: [],
+  updatedAt: "2026-05-08T09:10:00.000Z",
 };
 
 describe("LocalStorageRepository", () => {
@@ -96,9 +109,20 @@ describe("LocalStorageRepository", () => {
     await expect(repository.listCheckIns()).resolves.toEqual([checkIn]);
   });
 
+  it("saves and clears an in-progress workout draft", async () => {
+    await repository.saveWorkoutDraft(draft);
+
+    await expect(repository.getWorkoutDraft()).resolves.toEqual(draft);
+
+    await repository.clearWorkoutDraft();
+
+    await expect(repository.getWorkoutDraft()).resolves.toBeNull();
+  });
+
   it("exports and imports all user data", async () => {
     await repository.saveProfile(profile);
     await repository.saveSession(session);
+    await repository.saveWorkoutDraft(draft);
     const exported = await repository.exportAll();
 
     const nextRepository = new LocalStorageRepository(new MemoryStorage());
@@ -106,6 +130,7 @@ describe("LocalStorageRepository", () => {
 
     await expect(nextRepository.getProfile()).resolves.toEqual(profile);
     await expect(nextRepository.listSessions()).resolves.toEqual([session]);
+    await expect(nextRepository.getWorkoutDraft()).resolves.toEqual(draft);
   });
 
   it("clears all fitness coach data", async () => {
