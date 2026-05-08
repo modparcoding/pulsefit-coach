@@ -6,8 +6,9 @@ A mobile-friendly fitness coaching and monitoring app.
 
 - Pick a goal and generate a weekly workout plan.
 - Browse coaching sessions by strength, conditioning, or recovery.
-- Select workouts and log completed sessions.
-- Track weekly minutes, session count, and training load over time.
+- Start a guided workout that shows one exercise at a time.
+- Save effort, notes, and exercise outcomes automatically at the end.
+- Track weekly workouts, minutes moved, and plain-English coaching insights.
 - Copy a concise progress summary.
 
 ## Run locally

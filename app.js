@@ -348,6 +348,7 @@ const defaultState = {
   selectedWorkout: "lower-strength",
   activeWorkout: "lower-strength",
   exerciseCompletions: {},
+  currentRun: null,
   plan: [],
   sessions: [
     seededSession(-5, "upper-build", 44, 7, "Rows felt strong today."),
@@ -367,14 +368,18 @@ const elements = {
   recoveryToggle: document.querySelector("#recoveryToggle"),
   weekPlan: document.querySelector("#weekPlan"),
   workoutGrid: document.querySelector("#workoutGrid"),
-  logWorkout: document.querySelector("#logWorkout"),
-  sessionForm: document.querySelector("#sessionForm"),
-  logMinutes: document.querySelector("#logMinutes"),
-  logEffort: document.querySelector("#logEffort"),
-  logNotes: document.querySelector("#logNotes"),
+  todayWorkoutName: document.querySelector("#dashboard-title"),
+  todayWorkoutFocus: document.querySelector("#todayWorkoutFocus"),
+  todayDuration: document.querySelector("#todayDuration"),
+  todayDifficulty: document.querySelector("#todayDifficulty"),
+  todayExerciseCount: document.querySelector("#todayExerciseCount"),
+  startWorkout: document.querySelector("#startWorkout"),
+  swapWorkout: document.querySelector("#swapWorkout"),
   weeklyMinutes: document.querySelector("#weeklyMinutes"),
   weeklyWorkouts: document.querySelector("#weeklyWorkouts"),
-  weeklyLoad: document.querySelector("#weeklyLoad"),
+  targetRemaining: document.querySelector("#targetRemaining"),
+  insightGrid: document.querySelector("#insightGrid"),
+  progressInsights: document.querySelector("#progressInsights"),
   sessionList: document.querySelector("#sessionList"),
   progressChart: document.querySelector("#progressChart"),
   filterButtons: document.querySelectorAll("[data-filter]"),
@@ -387,6 +392,8 @@ const elements = {
   workoutModal: document.querySelector("#workoutModal"),
   closeWorkoutModal: document.querySelector("#closeWorkoutModal"),
   workoutDetailContent: document.querySelector("#workoutDetailContent"),
+  guidedWorkoutModal: document.querySelector("#guidedWorkoutModal"),
+  guidedWorkoutContent: document.querySelector("#guidedWorkoutContent"),
 };
 
 if (!state.plan.length) {
@@ -406,6 +413,7 @@ function seededSession(dayOffset, workoutId, minutes, effort, notes = "") {
     minutes,
     effort,
     completedExerciseIds: workout.exercises.map((item) => item.exerciseId),
+    exerciseStatuses: workout.exercises.map((item) => ({ exerciseId: item.exerciseId, status: "done" })),
     notes,
     date: date.toISOString(),
   };
@@ -418,6 +426,7 @@ function loadState() {
     nextState.sessions = (nextState.sessions || []).map(normalizeSession);
     nextState.exerciseCompletions = nextState.exerciseCompletions || {};
     nextState.activeWorkout = nextState.activeWorkout || nextState.selectedWorkout || "lower-strength";
+    nextState.currentRun = nextState.currentRun || null;
     return nextState;
   } catch {
     return structuredClone(defaultState);
@@ -425,12 +434,17 @@ function loadState() {
 }
 
 function normalizeSession(session) {
+  const completedExerciseIds = Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [];
+  const exerciseStatuses = Array.isArray(session.exerciseStatuses)
+    ? session.exerciseStatuses
+    : completedExerciseIds.map((exerciseId) => ({ exerciseId, status: "done" }));
   return {
     id: session.id || crypto.randomUUID(),
     workoutId: session.workoutId || "lower-strength",
     minutes: Number(session.minutes) || 0,
     effort: Number(session.effort) || 0,
-    completedExerciseIds: Array.isArray(session.completedExerciseIds) ? session.completedExerciseIds : [],
+    completedExerciseIds,
+    exerciseStatuses,
     notes: session.notes || "",
     date: session.date || new Date().toISOString(),
   };
@@ -469,27 +483,13 @@ function bindEvents() {
 
   elements.generatePlan.addEventListener("click", () => {
     state.plan = buildPlan(true);
+    state.selectedWorkout = todayWorkout().id;
+    state.activeWorkout = state.selectedWorkout;
     saveAndRender("Fresh week generated");
   });
 
-  elements.logWorkout.addEventListener("change", () => {
-    const workout = getWorkout(elements.logWorkout.value);
-    state.selectedWorkout = workout.id;
-    state.activeWorkout = workout.id;
-    elements.logMinutes.value = scaledMinutes(workout.minutes);
-    saveAndRender(`${workout.name} selected`);
-  });
-
-  elements.sessionForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    logSession(
-      elements.logWorkout.value,
-      Number(elements.logMinutes.value),
-      Number(elements.logEffort.value),
-      completedIdsForWorkout(elements.logWorkout.value),
-      elements.logNotes.value.trim()
-    );
-  });
+  elements.startWorkout.addEventListener("click", () => startGuidedWorkout(state.selectedWorkout));
+  elements.swapWorkout.addEventListener("click", swapForEasierSession);
 
   elements.filterButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -502,7 +502,6 @@ function bindEvents() {
   elements.resetData.addEventListener("click", () => {
     state = structuredClone(defaultState);
     state.plan = buildPlan();
-    elements.logNotes.value = "";
     saveAndRender("Progress reset");
   });
 
@@ -525,6 +524,9 @@ function bindEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && elements.workoutModal.classList.contains("show")) {
       closeWorkoutDetail();
+    }
+    if (event.key === "Escape" && elements.guidedWorkoutModal.classList.contains("show")) {
+      closeGuidedWorkout();
     }
   });
 }
@@ -583,13 +585,40 @@ function render() {
   elements.targetSessions.value = state.targetSessions;
   elements.intensitySlider.value = state.intensity;
   elements.recoveryToggle.checked = state.recoveryPrompts;
+  renderToday();
   renderPlan();
-  renderWorkoutOptions();
   renderWorkoutGrid(document.querySelector("[data-filter].active")?.dataset.filter || "all");
   renderMetrics();
+  renderInsights();
   renderSessions();
   renderCoachCue();
   drawChart();
+}
+
+function renderToday() {
+  const workout = todayWorkout();
+  state.selectedWorkout = workout.id;
+  state.activeWorkout = workout.id;
+  elements.todayWorkoutName.textContent = workout.name;
+  elements.todayWorkoutFocus.textContent = workout.focus;
+  elements.todayDuration.textContent = scaledMinutes(workout.minutes);
+  elements.todayDifficulty.textContent = workoutDifficulty(workout);
+  elements.todayExerciseCount.textContent = workout.exercises.length;
+}
+
+function todayWorkout() {
+  const weekSessions = sessionsThisWeek();
+  const usedIds = new Set(weekSessions.map((session) => session.workoutId));
+  const selected = getWorkout(state.selectedWorkout || "lower-strength");
+  if (selected && !usedIds.has(selected.id)) return selected;
+  const planned = state.plan.find((item) => item.workoutId && !usedIds.has(item.workoutId));
+  return planned ? getWorkout(planned.workoutId) : getWorkout(state.selectedWorkout || "lower-strength");
+}
+
+function workoutDifficulty(workout) {
+  if (workout.type === "recovery") return "Easy";
+  if (workout.minutes <= 35 || workout.exercises.length <= 3) return "Moderate";
+  return state.intensity >= 4 ? "Challenging" : "Moderate";
 }
 
 function renderPlan() {
@@ -624,10 +653,6 @@ function renderPlan() {
 }
 
 function renderWorkoutOptions() {
-  elements.logWorkout.innerHTML = workouts
-    .map((workout) => `<option value="${workout.id}">${escapeHtml(workout.name)}</option>`)
-    .join("");
-  elements.logWorkout.value = state.selectedWorkout;
 }
 
 function renderWorkoutGrid(filter = "all") {
@@ -653,12 +678,12 @@ function renderWorkoutGrid(filter = "all") {
           </div>
           <div class="stats-row">
             <span>${scaledMinutes(workout.minutes)} min</span>
-            <span>${scaledLoad(workout.load)} load</span>
+            <span>${workoutDifficulty(workout)}</span>
             <span>${workout.exercises.length} exercises</span>
           </div>
           <div class="card-actions">
             <button class="secondary-action" type="button" data-view="${workout.id}">View details</button>
-            <button type="button" data-pick="${workout.id}">Pick workout</button>
+            <button type="button" data-pick="${workout.id}">Set today</button>
           </div>
         </article>
       `
@@ -672,7 +697,7 @@ function renderWorkoutGrid(filter = "all") {
   elements.workoutGrid.querySelectorAll("[data-pick]").forEach((button) => {
     button.addEventListener("click", () => {
       selectWorkout(button.dataset.pick);
-      openWorkoutDetail(button.dataset.pick);
+      activateSection("dashboard");
     });
   });
 }
@@ -681,8 +706,6 @@ function selectWorkout(workoutId, notify = true) {
   const workout = getWorkout(workoutId);
   state.selectedWorkout = workout.id;
   state.activeWorkout = workout.id;
-  elements.logWorkout.value = workout.id;
-  elements.logMinutes.value = scaledMinutes(workout.minutes);
   saveState();
   render();
   if (notify) showToast(`${workout.name} selected`);
@@ -692,8 +715,6 @@ function openWorkoutDetail(workoutId) {
   const workout = getWorkout(workoutId);
   state.activeWorkout = workout.id;
   state.selectedWorkout = workout.id;
-  elements.logWorkout.value = workout.id;
-  elements.logMinutes.value = scaledMinutes(workout.minutes);
   saveState();
   renderWorkoutDetail(workout.id);
   elements.workoutModal.classList.add("show");
@@ -708,7 +729,6 @@ function closeWorkoutDetail() {
 
 function renderWorkoutDetail(workoutId) {
   const workout = getWorkout(workoutId);
-  const completed = completedIdsForWorkout(workout.id);
   elements.workoutDetailContent.innerHTML = `
     <div class="detail-heading">
       <p class="eyebrow">${workout.type}</p>
@@ -718,54 +738,34 @@ function renderWorkoutDetail(workoutId) {
     <div class="detail-stats">
       <span><strong>${scaledMinutes(workout.minutes)}</strong> min</span>
       <span><strong>${workout.exercises.length}</strong> exercises</span>
-      <span><strong>${completed.length}</strong> complete</span>
+      <span><strong>${workoutDifficulty(workout)}</strong> difficulty</span>
     </div>
     <div class="coach-callout">
       <strong>Coach guidance</strong>
       <span>${escapeHtml(workout.coaching)}</span>
     </div>
-    <div class="workout-progress">
-      <strong>${completed.length} of ${workout.exercises.length} exercises complete</strong>
-      <div class="progress-track"><span style="width: ${Math.round((completed.length / workout.exercises.length) * 100)}%"></span></div>
-    </div>
     <div class="exercise-detail-list">
-      ${workout.exercises.map((item) => renderExerciseDetail(workout.id, item, completed)).join("")}
+      ${workout.exercises.map((item) => renderExerciseDetail(item)).join("")}
     </div>
-    <button class="primary-action" type="button" data-log-active="${workout.id}">Log this workout</button>
+    <button class="primary-action" type="button" data-start-detail="${workout.id}">Start guided workout</button>
   `;
 
-  elements.workoutDetailContent.querySelectorAll("[data-complete-exercise]").forEach((checkbox) => {
-    checkbox.addEventListener("change", () => {
-      toggleExerciseCompletion(workout.id, checkbox.value, checkbox.checked);
-      renderWorkoutDetail(workout.id);
-      renderSessions();
-    });
-  });
-
-  elements.workoutDetailContent.querySelector("[data-log-active]").addEventListener("click", () => {
-    logSession(
-      workout.id,
-      Number(elements.logMinutes.value) || scaledMinutes(workout.minutes),
-      Number(elements.logEffort.value) || 7,
-      completedIdsForWorkout(workout.id),
-      elements.logNotes.value.trim()
-    );
+  elements.workoutDetailContent.querySelector("[data-start-detail]").addEventListener("click", () => {
     closeWorkoutDetail();
+    startGuidedWorkout(workout.id);
   });
 }
 
-function renderExerciseDetail(workoutId, item, completed) {
+function renderExerciseDetail(item) {
   const exercise = getExercise(item.exerciseId);
-  const checked = completed.includes(exercise.id) ? "checked" : "";
   return `
     <article class="exercise-detail">
-      <label class="exercise-check">
-        <input type="checkbox" value="${exercise.id}" data-complete-exercise="${workoutId}" ${checked} />
+      <div class="exercise-check">
         <span>
           <strong>${escapeHtml(exercise.name)}</strong>
           <small>${item.sets} sets &middot; ${escapeHtml(item.reps)} &middot; ${formatRest(item.restSeconds)} rest</small>
         </span>
-      </label>
+      </div>
       <p>${escapeHtml(item.notes)}</p>
       <details>
         <summary>How to do it</summary>
@@ -800,6 +800,198 @@ function completedIdsForWorkout(workoutId) {
   return Array.isArray(state.exerciseCompletions?.[workoutId]) ? state.exerciseCompletions[workoutId] : [];
 }
 
+function startGuidedWorkout(workoutId) {
+  const workout = getWorkout(workoutId);
+  state.currentRun = {
+    workoutId: workout.id,
+    exerciseIndex: 0,
+    phase: "exercise",
+    results: [],
+    startedAt: new Date().toISOString(),
+  };
+  state.selectedWorkout = workout.id;
+  state.activeWorkout = workout.id;
+  saveState();
+  renderGuidedWorkout();
+  elements.guidedWorkoutModal.classList.add("show");
+  elements.guidedWorkoutModal.setAttribute("aria-hidden", "false");
+}
+
+function renderGuidedWorkout() {
+  if (!state.currentRun) return;
+  const workout = getWorkout(state.currentRun.workoutId);
+  if (state.currentRun.phase === "rest") {
+    renderRestStep(workout);
+    return;
+  }
+  if (state.currentRun.phase === "finish") {
+    renderFinishStep(workout);
+    return;
+  }
+
+  const item = workout.exercises[state.currentRun.exerciseIndex];
+  const exercise = getExercise(item.exerciseId);
+  elements.guidedWorkoutContent.innerHTML = `
+    <div class="guided-topline">
+      <span>Exercise ${state.currentRun.exerciseIndex + 1} of ${workout.exercises.length}</span>
+      <button type="button" data-close-guided aria-label="Close workout">Close</button>
+    </div>
+    <div class="guided-card">
+      <p class="eyebrow">${escapeHtml(workout.name)}</p>
+      <h2 id="guidedWorkoutTitle">${escapeHtml(exercise.name)}</h2>
+      <div class="guided-prescription">
+        <span><strong>${item.sets}</strong> sets</span>
+        <span><strong>${escapeHtml(item.reps)}</strong> reps</span>
+        <span><strong>${formatRest(item.restSeconds)}</strong> rest</span>
+      </div>
+      <p class="guided-instruction">${escapeHtml(exercise.steps[0])} ${escapeHtml(exercise.steps[1])}</p>
+      <div class="cue-list">
+        ${exercise.coachingCues.slice(0, 3).map((cue) => `<span>${escapeHtml(cue)}</span>`).join("")}
+      </div>
+      <div class="support-note">
+        <strong>Easier option</strong>
+        <span>${escapeHtml(exercise.easierVariation)}</span>
+      </div>
+      <div class="safety-note">
+        <strong>Safety</strong>
+        <span>${escapeHtml(exercise.safetyNote)}</span>
+      </div>
+    </div>
+    <div class="guided-actions">
+      <button class="primary-action" type="button" data-exercise-status="done">Done</button>
+      <button class="secondary-action" type="button" data-exercise-status="too-hard">Too hard</button>
+      <button class="text-action" type="button" data-exercise-status="skipped">Skip</button>
+    </div>
+  `;
+  bindGuidedButtons();
+}
+
+function renderRestStep(workout) {
+  const nextItem = workout.exercises[state.currentRun.exerciseIndex + 1];
+  const previousItem = workout.exercises[state.currentRun.exerciseIndex];
+  const nextExercise = getExercise(nextItem.exerciseId);
+  elements.guidedWorkoutContent.innerHTML = `
+    <div class="guided-topline">
+      <span>Rest</span>
+      <button type="button" data-close-guided aria-label="Close workout">Close</button>
+    </div>
+    <div class="rest-card">
+      <p class="eyebrow">Take a breath</p>
+      <h2 id="guidedWorkoutTitle">${formatRest(previousItem.restSeconds)} rest</h2>
+      <p>Let your breathing settle. Shake out tension and get ready for the next movement.</p>
+      <div class="next-preview">
+        <span>Next exercise</span>
+        <strong>${escapeHtml(nextExercise.name)}</strong>
+        <small>${nextItem.sets} sets &middot; ${escapeHtml(nextItem.reps)}</small>
+      </div>
+    </div>
+    <button class="primary-action" type="button" data-continue-rest>Continue</button>
+  `;
+  bindGuidedButtons();
+}
+
+function renderFinishStep(workout) {
+  const doneCount = state.currentRun.results.filter((result) => result.status === "done").length;
+  const tooHardCount = state.currentRun.results.filter((result) => result.status === "too-hard").length;
+  elements.guidedWorkoutContent.innerHTML = `
+    <div class="guided-topline">
+      <span>Workout complete</span>
+      <button type="button" data-close-guided aria-label="Close workout">Close</button>
+    </div>
+    <form class="finish-card" id="finishWorkoutForm">
+      <p class="eyebrow">${escapeHtml(workout.name)}</p>
+      <h2 id="guidedWorkoutTitle">Nice work. How did it feel?</h2>
+      <div class="finish-summary">
+        <span><strong>${doneCount}</strong> done</span>
+        <span><strong>${tooHardCount}</strong> too hard</span>
+        <span><strong>${state.currentRun.results.length}</strong> total</span>
+      </div>
+      <label>
+        Effort 1-10
+        <input id="finishEffort" type="range" min="1" max="10" value="7" />
+      </label>
+      <label>
+        Optional note
+        <textarea id="finishNotes" rows="4" placeholder="Anything to remember for next time?"></textarea>
+      </label>
+      <button class="primary-action" type="submit">Save workout</button>
+    </form>
+  `;
+  bindGuidedButtons();
+}
+
+function bindGuidedButtons() {
+  elements.guidedWorkoutContent.querySelectorAll("[data-close-guided]").forEach((button) => {
+    button.addEventListener("click", closeGuidedWorkout);
+  });
+
+  elements.guidedWorkoutContent.querySelectorAll("[data-exercise-status]").forEach((button) => {
+    button.addEventListener("click", () => recordExerciseStatus(button.dataset.exerciseStatus));
+  });
+
+  const continueButton = elements.guidedWorkoutContent.querySelector("[data-continue-rest]");
+  if (continueButton) {
+    continueButton.addEventListener("click", () => {
+      state.currentRun.exerciseIndex += 1;
+      state.currentRun.phase = "exercise";
+      saveState();
+      renderGuidedWorkout();
+    });
+  }
+
+  const finishForm = elements.guidedWorkoutContent.querySelector("#finishWorkoutForm");
+  if (finishForm) {
+    finishForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      completeGuidedWorkout();
+    });
+  }
+}
+
+function recordExerciseStatus(status) {
+  const workout = getWorkout(state.currentRun.workoutId);
+  const item = workout.exercises[state.currentRun.exerciseIndex];
+  state.currentRun.results.push({
+    exerciseId: item.exerciseId,
+    status,
+  });
+
+  if (state.currentRun.exerciseIndex >= workout.exercises.length - 1) {
+    state.currentRun.phase = "finish";
+  } else {
+    state.currentRun.phase = "rest";
+  }
+  saveState();
+  renderGuidedWorkout();
+}
+
+function completeGuidedWorkout() {
+  const run = state.currentRun;
+  const workout = getWorkout(run.workoutId);
+  const effort = Number(elements.guidedWorkoutContent.querySelector("#finishEffort").value);
+  const notes = elements.guidedWorkoutContent.querySelector("#finishNotes").value.trim();
+  const completedExerciseIds = run.results
+    .filter((result) => result.status === "done")
+    .map((result) => result.exerciseId);
+
+  logSession(workout.id, scaledMinutes(workout.minutes), effort, completedExerciseIds, notes, run.results);
+  state.currentRun = null;
+  saveState();
+  closeGuidedWorkout();
+  activateSection("progress");
+}
+
+function closeGuidedWorkout() {
+  elements.guidedWorkoutModal.classList.remove("show");
+  elements.guidedWorkoutModal.setAttribute("aria-hidden", "true");
+}
+
+function swapForEasierSession() {
+  const easyWorkout = workouts.find((workout) => workout.type === "recovery" && workout.id !== state.selectedWorkout) || getWorkout("mobility-flow");
+  selectWorkout(easyWorkout.id, false);
+  showToast(`${easyWorkout.name} is ready for today`);
+}
+
 function iconForType(type) {
   if (type === "conditioning") return `<svg viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"/></svg>`;
   if (type === "recovery") return `<svg viewBox="0 0 24 24"><path d="M12 21c-4-2.5-7-6-7-10a7 7 0 0 1 14 0c0 4-3 7.5-7 10Z"/><path d="M9 11h6"/></svg>`;
@@ -809,10 +1001,67 @@ function iconForType(type) {
 function renderMetrics() {
   const weekSessions = sessionsThisWeek();
   const minutes = weekSessions.reduce((sum, session) => sum + session.minutes, 0);
-  const load = weekSessions.reduce((sum, session) => sum + session.minutes * session.effort, 0);
   elements.weeklyMinutes.textContent = minutes;
   elements.weeklyWorkouts.textContent = weekSessions.length;
-  elements.weeklyLoad.textContent = load;
+  elements.targetRemaining.textContent = Math.max(state.targetSessions - weekSessions.length, 0);
+}
+
+function renderInsights() {
+  const insights = weeklyInsights();
+  const cards = [
+    { label: "Most completed type", value: insights.mostCompletedType, detail: "The pattern showing up most this week." },
+    { label: "Exercises too hard", value: insights.tooHardCount, detail: insights.tooHardCount ? "Use easier options next time." : "Nothing marked too hard yet." },
+    { label: "Next action", value: insights.nextAction, detail: "A simple suggestion for today." },
+  ];
+
+  elements.insightGrid.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="insight-card">
+          <span>${escapeHtml(card.label)}</span>
+          <strong>${escapeHtml(card.value)}</strong>
+          <p>${escapeHtml(card.detail)}</p>
+        </article>
+      `
+    )
+    .join("");
+
+  elements.progressInsights.innerHTML = [
+    `You have completed ${insights.completedThisWeek} workout${insights.completedThisWeek === 1 ? "" : "s"} this week.`,
+    insights.remaining ? `${insights.remaining} target session${insights.remaining === 1 ? "" : "s"} remaining.` : "Weekly target reached.",
+    `Most completed workout type: ${insights.mostCompletedType}.`,
+    insights.tooHardCount ? `${insights.tooHardCount} exercise${insights.tooHardCount === 1 ? "" : "s"} marked too hard.` : "No exercises marked too hard this week.",
+    `Suggested next action: ${insights.nextAction}.`,
+  ]
+    .map((item) => `<article><strong>${escapeHtml(item)}</strong></article>`)
+    .join("");
+}
+
+function weeklyInsights() {
+  const weekSessions = sessionsThisWeek();
+  const typeCounts = weekSessions.reduce((counts, session) => {
+    const type = getWorkout(session.workoutId).type;
+    counts[type] = (counts[type] || 0) + 1;
+    return counts;
+  }, {});
+  const mostCompletedType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "None yet";
+  const tooHardCount = weekSessions.reduce(
+    (sum, session) => sum + (session.exerciseStatuses || []).filter((item) => item.status === "too-hard").length,
+    0
+  );
+  const remaining = Math.max(state.targetSessions - weekSessions.length, 0);
+  let nextAction = "Start today's workout";
+  if (tooHardCount >= 2) nextAction = "Choose an easier session";
+  if (!remaining) nextAction = "Take a recovery win";
+  if (weekSessions.length === 0) nextAction = "Do one short guided workout";
+
+  return {
+    completedThisWeek: weekSessions.length,
+    remaining,
+    mostCompletedType: capitalize(mostCompletedType),
+    tooHardCount,
+    nextAction,
+  };
 }
 
 function renderSessions() {
@@ -824,10 +1073,13 @@ function renderSessions() {
           const date = new Date(session.date);
           const completeCount = session.completedExerciseIds?.length || 0;
           const totalCount = workout.exercises.length;
+          const tooHardCount = (session.exerciseStatuses || []).filter((item) => item.status === "too-hard").length;
+          const skippedCount = (session.exerciseStatuses || []).filter((item) => item.status === "skipped").length;
           return `
             <article class="session-item">
               <strong>${escapeHtml(workout.name)}<span>${session.minutes} min</span></strong>
-              <span>${date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} &middot; effort ${session.effort}/10 &middot; ${completeCount} of ${totalCount} exercises</span>
+              <span>${date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} &middot; effort ${session.effort}/10 &middot; ${completeCount} of ${totalCount} done</span>
+              ${tooHardCount || skippedCount ? `<span>${tooHardCount} too hard &middot; ${skippedCount} skipped</span>` : ""}
               ${session.notes ? `<p>${escapeHtml(session.notes)}</p>` : ""}
             </article>
           `;
@@ -842,7 +1094,7 @@ function renderCoachCue() {
   elements.coachCue.textContent = workout.coaching;
 }
 
-function logSession(workoutId, minutes, effort, completedExerciseIds = [], notes = "") {
+function logSession(workoutId, minutes, effort, completedExerciseIds = [], notes = "", exerciseStatuses = []) {
   state.selectedWorkout = workoutId;
   state.activeWorkout = workoutId;
   state.sessions.push({
@@ -851,12 +1103,12 @@ function logSession(workoutId, minutes, effort, completedExerciseIds = [], notes
     minutes,
     effort,
     completedExerciseIds,
+    exerciseStatuses,
     notes,
     date: new Date().toISOString(),
   });
   state.exerciseCompletions[workoutId] = [];
-  elements.logNotes.value = "";
-  saveAndRender("Session logged");
+  saveAndRender("Workout saved");
 }
 
 function sessionsThisWeek() {
@@ -871,10 +1123,6 @@ function scaledMinutes(minutes) {
   return Math.round(minutes * (0.82 + state.intensity * 0.06));
 }
 
-function scaledLoad(load) {
-  return Math.round(load * (0.78 + state.intensity * 0.08));
-}
-
 function drawChart() {
   const canvas = elements.progressChart;
   const context = canvas.getContext("2d");
@@ -887,15 +1135,15 @@ function drawChart() {
   const data = Array.from({ length: 7 }, (_, index) => {
     const date = new Date(now);
     date.setDate(now.getDate() - (6 - index));
-    const dayLoad = state.sessions
+    const dayMinutes = state.sessions
       .filter((session) => sameDay(new Date(session.date), date))
-      .reduce((sum, session) => sum + session.minutes * session.effort, 0);
+      .reduce((sum, session) => sum + session.minutes, 0);
     return {
       label: date.toLocaleDateString(undefined, { weekday: "short" }),
-      value: dayLoad,
+      value: dayMinutes,
     };
   });
-  const max = Math.max(250, ...data.map((item) => item.value));
+  const max = Math.max(60, ...data.map((item) => item.value));
   const barWidth = (width - padding * 2) / data.length - 18;
 
   context.clearRect(0, 0, width, height);
@@ -945,17 +1193,19 @@ function sameDay(a, b) {
 }
 
 function makeSummary() {
-  const weekSessions = sessionsThisWeek();
-  const minutes = weekSessions.reduce((sum, session) => sum + session.minutes, 0);
-  const load = weekSessions.reduce((sum, session) => sum + session.minutes * session.effort, 0);
-  const completed = weekSessions.reduce((sum, session) => sum + (session.completedExerciseIds?.length || 0), 0);
-  return `PulseFit summary: ${weekSessions.length}/${state.targetSessions} sessions, ${minutes} minutes, ${load} training load, ${completed} exercises completed. Goal: ${state.goal}.`;
+  const insights = weeklyInsights();
+  const minutes = sessionsThisWeek().reduce((sum, session) => sum + session.minutes, 0);
+  return `PulseFit summary: ${insights.completedThisWeek}/${state.targetSessions} workouts, ${minutes} minutes moved, ${insights.tooHardCount} exercises marked too hard. Suggested next action: ${insights.nextAction}.`;
 }
 
 function formatRest(seconds) {
   if (!seconds) return "no";
   if (seconds < 60) return `${seconds}s`;
   return `${Math.round(seconds / 60)} min`;
+}
+
+function capitalize(value) {
+  return String(value).charAt(0).toUpperCase() + String(value).slice(1);
 }
 
 function escapeHtml(value) {
