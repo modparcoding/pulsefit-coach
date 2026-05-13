@@ -3594,17 +3594,7 @@ function guidePatternLabel(pattern: MovementPattern): string {
 }
 
 function exerciseGuideImageUrl(exerciseId: string): string | null {
-  const imageMap: Record<string, string> = {
-    "glute-bridge": "glute-bridge.jpg",
-    "goblet-squat": "goblet-squat.jpg",
-    "incline-push-up": "incline-push-up.jpg",
-    "romanian-deadlift": "romanian-deadlift.jpg",
-  };
-  const fileName = imageMap[exerciseId];
-
-  return fileName
-    ? `${import.meta.env.BASE_URL}assets/exercise-guides/${fileName}`
-    : null;
+  return `${import.meta.env.BASE_URL}assets/exercise-guides/${exerciseId}.jpg`;
 }
 
 function guideFocusLabels(
