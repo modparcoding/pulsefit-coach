@@ -3334,6 +3334,7 @@ function ExerciseDetailPanel({
 
 type ExerciseGuideFrame = {
   cue: string;
+  focus: string;
   instruction: string;
   title: string;
 };
@@ -3375,13 +3376,17 @@ function ExerciseGuideOverlay({
         </header>
 
         <button
-          className="w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 text-left"
+          className="w-full rounded-lg border border-stone-200 bg-stone-50 p-4 text-left"
           onClick={nextFrame}
           type="button"
         >
-          <ExerciseGuideImage exercise={exercise} frameIndex={frameIndex} />
-          <span className="block border-t border-stone-200 bg-white p-3 text-center text-xs font-black uppercase tracking-wide text-stone-500">
-            Tap image for next step
+          <ExerciseGuideFocusCard
+            exercise={exercise}
+            frame={frame}
+            frameIndex={frameIndex}
+          />
+          <span className="mt-4 block border-t border-stone-200 pt-3 text-center text-xs font-black uppercase tracking-wide text-stone-500">
+            Tap for next step
           </span>
         </button>
 
@@ -3446,115 +3451,48 @@ function ExerciseGuideOverlay({
   );
 }
 
-function ExerciseGuideImage({
+function ExerciseGuideFocusCard({
   exercise,
+  frame,
   frameIndex,
 }: {
   exercise: Exercise;
+  frame: ExerciseGuideFrame;
   frameIndex: number;
 }) {
-  const pose = guidePoseFor(exercise.movementPattern, frameIndex);
-  const hasHandWeight =
-    exercise.equipment.includes("dumbbells") ||
-    exercise.equipment.includes("kettlebell");
+  const labels = guideFocusLabels(exercise, frameIndex);
 
   return (
-    <svg
-      aria-label={`${exercise.name} visual step ${frameIndex + 1}`}
-      className="block h-64 w-full"
-      role="img"
-      viewBox="0 0 240 170"
-    >
-      <rect fill="#f7f3ec" height="170" width="240" />
-      <path
-        d="M24 142 H216"
-        stroke="#d6cec1"
-        strokeLinecap="round"
-        strokeWidth="5"
-      />
-      <circle cx="196" cy="34" fill="#fb923c" opacity="0.18" r="18" />
-      <path
-        d={`M${pose.shoulderX} ${pose.shoulderY} L${pose.hipX} ${pose.hipY}`}
-        stroke="#14532d"
-        strokeLinecap="round"
-        strokeWidth="9"
-      />
-      <circle cx={pose.headX} cy={pose.headY} fill="#14532d" r="13" />
-      <path
-        d={`M${pose.shoulderX} ${pose.shoulderY + 6} L${pose.leftHandX} ${pose.leftHandY}`}
-        stroke="#14532d"
-        strokeLinecap="round"
-        strokeWidth="7"
-      />
-      <path
-        d={`M${pose.shoulderX} ${pose.shoulderY + 6} L${pose.rightHandX} ${pose.rightHandY}`}
-        stroke="#14532d"
-        strokeLinecap="round"
-        strokeWidth="7"
-      />
-      <path
-        d={`M${pose.hipX} ${pose.hipY} L${pose.leftKneeX} ${pose.leftKneeY} L${pose.leftFootX} ${pose.leftFootY}`}
-        fill="none"
-        stroke="#14532d"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="8"
-      />
-      <path
-        d={`M${pose.hipX} ${pose.hipY} L${pose.rightKneeX} ${pose.rightKneeY} L${pose.rightFootX} ${pose.rightFootY}`}
-        fill="none"
-        stroke="#14532d"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="8"
-      />
-      {hasHandWeight && (
-        <g>
-          <rect
-            fill="#f97316"
-            height="18"
-            rx="4"
-            width="28"
-            x={pose.weightX}
-            y={pose.weightY}
-          />
-          <path
-            d={`M${pose.weightX - 5} ${pose.weightY + 9} H${pose.weightX + 33}`}
-            stroke="#9a3412"
-            strokeLinecap="round"
-            strokeWidth="3"
-          />
-        </g>
-      )}
-      {exercise.equipment.includes("bench") && (
-        <g>
-          <rect fill="#a8a29e" height="10" rx="3" width="92" x="70" y="126" />
-          <path
-            d="M82 136 V146 M150 136 V146"
-            stroke="#78716c"
-            strokeWidth="4"
-          />
-        </g>
-      )}
-      <path
-        d={pose.arrowPath}
-        fill="none"
-        stroke="#f97316"
-        strokeDasharray="5 5"
-        strokeLinecap="round"
-        strokeWidth="4"
-      />
-      <text
-        fill="#57534e"
-        fontFamily="Inter, system-ui, sans-serif"
-        fontSize="12"
-        fontWeight="800"
-        x="18"
-        y="25"
-      >
-        {frameIndex === 0 ? "Set up" : frameIndex === 1 ? "Move" : "Finish"}
-      </text>
-    </svg>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-wide text-orange-600">
+            {frame.focus}
+          </p>
+          <p className="mt-1 text-xl font-black text-stone-950">
+            {guidePatternLabel(exercise.movementPattern)}
+          </p>
+        </div>
+        <span className="rounded-md bg-white px-2 py-1 text-xs font-black capitalize text-stone-600">
+          {exercise.equipment
+            .map((item) => item.replaceAll("_", " "))
+            .join(", ")}
+        </span>
+      </div>
+      <div className="grid gap-2">
+        {labels.map((label) => (
+          <div
+            className="flex items-center justify-between gap-3 rounded-lg bg-white p-3"
+            key={label.name}
+          >
+            <span className="text-sm font-black uppercase tracking-wide text-stone-500">
+              {label.name}
+            </span>
+            <strong className="text-right text-stone-900">{label.value}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -3568,11 +3506,13 @@ function buildExerciseGuideFrames(exercise: Exercise): ExerciseGuideFrame[] {
   return [
     {
       title: "Set your position",
+      focus: "Start position",
       instruction: setup || "Get into a steady start position.",
       cue: exercise.coachingCues[0] ?? "Move slowly and stay in control.",
     },
     {
       title: "Make the main movement",
+      focus: "Main action",
       instruction: movement || "Move through the rep with control.",
       cue:
         exercise.coachingCues[1] ??
@@ -3581,6 +3521,7 @@ function buildExerciseGuideFrames(exercise: Exercise): ExerciseGuideFrame[] {
     },
     {
       title: "Finish cleanly",
+      focus: "End position",
       instruction: finish || "Return to the start position with good form.",
       cue:
         exercise.coachingCues[2] ??
@@ -3590,166 +3531,54 @@ function buildExerciseGuideFrames(exercise: Exercise): ExerciseGuideFrame[] {
   ];
 }
 
-function guidePoseFor(
-  pattern: MovementPattern,
-  frameIndex: number,
-): {
-  arrowPath: string;
-  headX: number;
-  headY: number;
-  hipX: number;
-  hipY: number;
-  leftFootX: number;
-  leftFootY: number;
-  leftHandX: number;
-  leftHandY: number;
-  leftKneeX: number;
-  leftKneeY: number;
-  rightFootX: number;
-  rightFootY: number;
-  rightHandX: number;
-  rightHandY: number;
-  rightKneeX: number;
-  rightKneeY: number;
-  shoulderX: number;
-  shoulderY: number;
-  weightX: number;
-  weightY: number;
-} {
-  const deep = frameIndex === 1;
-  const finish = frameIndex === 2;
-
-  if (
-    pattern === "push_horizontal" ||
-    pattern === "core" ||
-    pattern === "mobility"
-  ) {
-    return {
-      arrowPath: deep ? "M72 98 C100 116, 132 116, 164 98" : "M74 92 H164",
-      headX: finish ? 70 : 62,
-      headY: deep ? 76 : 68,
-      shoulderX: finish ? 88 : 82,
-      shoulderY: deep ? 89 : 82,
-      hipX: finish ? 134 : 132,
-      hipY: deep ? 101 : 92,
-      leftHandX: 82,
-      leftHandY: 128,
-      rightHandX: 108,
-      rightHandY: 128,
-      leftKneeX: finish ? 150 : 160,
-      leftKneeY: 124,
-      leftFootX: 178,
-      leftFootY: 136,
-      rightKneeX: 158,
-      rightKneeY: 112,
-      rightFootX: 196,
-      rightFootY: 132,
-      weightX: 94,
-      weightY: 82,
-    };
-  }
-
-  if (pattern === "hinge") {
-    return {
-      arrowPath: deep ? "M106 68 C126 82, 142 100, 150 122" : "M116 54 V112",
-      headX: deep ? 88 : 112,
-      headY: deep ? 49 : 35,
-      shoulderX: deep ? 104 : 118,
-      shoulderY: deep ? 66 : 56,
-      hipX: 132,
-      hipY: deep ? 92 : 88,
-      leftHandX: deep ? 120 : 106,
-      leftHandY: deep ? 116 : 88,
-      rightHandX: deep ? 146 : 134,
-      rightHandY: deep ? 116 : 88,
-      leftKneeX: 116,
-      leftKneeY: 116,
-      leftFootX: 96,
-      leftFootY: 142,
-      rightKneeX: 150,
-      rightKneeY: 116,
-      rightFootX: 170,
-      rightFootY: 142,
-      weightX: deep ? 120 : 106,
-      weightY: deep ? 112 : 84,
-    };
-  }
-
-  if (pattern === "lunge") {
-    return {
-      arrowPath: deep ? "M120 54 C108 76, 100 94, 96 116" : "M96 46 V112",
-      headX: 120,
-      headY: deep ? 34 : 30,
-      shoulderX: 120,
-      shoulderY: deep ? 56 : 50,
-      hipX: 118,
-      hipY: deep ? 88 : 82,
-      leftHandX: 102,
-      leftHandY: deep ? 88 : 80,
-      rightHandX: 138,
-      rightHandY: deep ? 88 : 80,
-      leftKneeX: deep ? 86 : 102,
-      leftKneeY: deep ? 112 : 108,
-      leftFootX: deep ? 60 : 88,
-      leftFootY: 142,
-      rightKneeX: deep ? 150 : 138,
-      rightKneeY: deep ? 112 : 108,
-      rightFootX: deep ? 178 : 162,
-      rightFootY: 142,
-      weightX: 106,
-      weightY: deep ? 84 : 76,
-    };
-  }
-
-  if (pattern === "pull_horizontal" || pattern === "pull_vertical") {
-    return {
-      arrowPath: deep ? "M70 78 C96 58, 126 58, 154 78" : "M72 84 H156",
-      headX: 108,
-      headY: deep ? 38 : 34,
-      shoulderX: 112,
-      shoulderY: deep ? 62 : 55,
-      hipX: 128,
-      hipY: deep ? 94 : 86,
-      leftHandX: deep ? 72 : 86,
-      leftHandY: deep ? 70 : 92,
-      rightHandX: deep ? 152 : 146,
-      rightHandY: deep ? 70 : 92,
-      leftKneeX: 110,
-      leftKneeY: 116,
-      leftFootX: 90,
-      leftFootY: 142,
-      rightKneeX: 145,
-      rightKneeY: 116,
-      rightFootX: 166,
-      rightFootY: 142,
-      weightX: deep ? 56 : 72,
-      weightY: deep ? 62 : 88,
-    };
-  }
-
-  return {
-    arrowPath: deep ? "M120 48 C116 76, 116 96, 120 122" : "M120 42 V116",
-    headX: 120,
-    headY: deep ? 42 : 32,
-    shoulderX: 120,
-    shoulderY: deep ? 66 : 54,
-    hipX: 120,
-    hipY: deep ? 98 : 88,
-    leftHandX: deep ? 96 : 102,
-    leftHandY: deep ? 92 : 84,
-    rightHandX: deep ? 144 : 138,
-    rightHandY: deep ? 92 : 84,
-    leftKneeX: deep ? 94 : 104,
-    leftKneeY: deep ? 118 : 112,
-    leftFootX: deep ? 82 : 96,
-    leftFootY: 142,
-    rightKneeX: deep ? 146 : 136,
-    rightKneeY: deep ? 118 : 112,
-    rightFootX: deep ? 158 : 144,
-    rightFootY: 142,
-    weightX: 106,
-    weightY: deep ? 84 : 76,
+function guidePatternLabel(pattern: MovementPattern): string {
+  const labels: Record<MovementPattern, string> = {
+    carry: "Carry",
+    conditioning: "Conditioning",
+    core: "Core control",
+    hinge: "Hip hinge",
+    lunge: "Single-leg control",
+    mobility: "Mobility flow",
+    pull_horizontal: "Pull",
+    pull_vertical: "Pull",
+    push_horizontal: "Push",
+    push_vertical: "Press",
+    squat: "Squat",
   };
+
+  return labels[pattern];
+}
+
+function guideFocusLabels(
+  exercise: Exercise,
+  frameIndex: number,
+): { name: string; value: string }[] {
+  const movement = guidePatternLabel(exercise.movementPattern);
+  const equipment = exercise.equipment
+    .map((item) => item.replaceAll("_", " "))
+    .join(", ");
+
+  if (frameIndex === 0) {
+    return [
+      { name: "Position", value: movement },
+      { name: "Equipment", value: equipment || "none" },
+      { name: "Target", value: exercise.primaryMuscles.slice(0, 2).join(", ") },
+    ];
+  }
+
+  if (frameIndex === 1) {
+    return [
+      { name: "Move", value: exercise.executionSteps[0] ?? "Controlled rep" },
+      { name: "Control", value: exercise.coachingCues[0] ?? "Steady form" },
+      { name: "Avoid", value: exercise.commonMistakes[0] ?? "Rushing" },
+    ];
+  }
+
+  return [
+    { name: "Finish", value: exercise.executionSteps.at(-1) ?? "Reset calmly" },
+    { name: "Check", value: exercise.coachingCues[1] ?? "Good posture" },
+    { name: "Stop if", value: "Sharp pain" },
+  ];
 }
 
 function SessionDetailPanel({
