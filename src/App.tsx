@@ -1014,6 +1014,16 @@ function GuidedWorkout({
       total + result.setResults.filter((set) => set.completed).length,
     0,
   );
+  const progressPercent =
+    ((exerciseIndex + setIndex / Math.max(totalSets, 1)) /
+      Math.max(plannedExercises.length, 1)) *
+    100;
+  const leadInstruction =
+    exercise?.executionSteps[0] ??
+    plannedExercise?.notes ??
+    "Move with control and stop if anything hurts.";
+  const guideIntroFrame = exercise ? buildExerciseGuideFrames(exercise)[0] : null;
+  const latestLoggedSet = loggedSets[loggedSets.length - 1];
 
   useEffect(() => {
     if (!plannedExercise) return;
@@ -1311,7 +1321,7 @@ function GuidedWorkout({
     await repository.clearWorkoutDraft();
     setIsSaving(false);
     onExit(
-      `Workout saved. ${completedSetCount} sets were logged across ${plannedExercises.length} exercises.`,
+      `Workout saved. I remembered ${completedSetCount} sets across ${plannedExercises.length} exercises for next time.`,
     );
   }
 
@@ -1351,16 +1361,10 @@ function GuidedWorkout({
     const tooHardCount = results.filter(
       (result) => result.outcome === "too_hard",
     ).length;
-    const totalPlannedSets = plannedExercises.reduce(
-      (total, item) => total + item.sets,
-      0,
-    );
-    const totalVolume = results
-      .flatMap((result) => result.setResults)
-      .reduce(
-        (total, set) => total + (set.actualWeight ?? 0) * set.actualReps,
-        0,
-      );
+    const totalPlannedSets = plannedExercises.reduce((total, item) => total + item.sets, 0);
+    const completedExerciseTotal = results.filter(
+      (result) => result.outcome === "completed" || result.outcome === "partial",
+    ).length;
     const nextTemplate = getNextTemplateAfter(template);
     const coachingNotes = completionCoachingNotes(results);
 
@@ -1371,29 +1375,27 @@ function GuidedWorkout({
             Workout complete
           </p>
           <h1 className="mt-2 text-4xl font-black leading-tight">
-            Nice work. Let&apos;s remember this.
+            Strong finish. I&apos;ll remember today.
           </h1>
+          <p className="mt-2 leading-7 text-stone-600">
+            You&apos;re done. A couple of quick notes and the next session will
+            be easier to start.
+          </p>
         </header>
 
         <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <div className="grid grid-cols-3 gap-2">
             <InfoCard
-              label="Sets logged"
-              value={`${completedSetCount}/${totalPlannedSets}`}
+              label="Exercises done"
+              value={`${completedExerciseTotal}/${plannedExercises.length}`}
             />
-            <InfoCard label="Too hard" value={String(tooHardCount)} />
-            <InfoCard label="Skipped" value={String(skippedCount)} />
+            <InfoCard label="Sets done" value={`${completedSetCount}/${totalPlannedSets}`} />
+            <InfoCard label="Needed easing off" value={String(tooHardCount + skippedCount)} />
           </div>
-          {totalVolume > 0 && (
-            <p className="mt-4 rounded-lg bg-stone-100 p-3 text-sm font-bold text-stone-700">
-              Estimated volume: {Math.round(totalVolume).toLocaleString()}{" "}
-              {profile.units}
-            </p>
-          )}
 
           <div className="mt-5 rounded-lg bg-emerald-50 p-4">
             <p className="text-sm font-black uppercase tracking-wide text-emerald-950">
-              What changes next time
+              What I&apos;ll adjust next time
             </p>
             <ul className="mt-2 grid gap-2">
               {coachingNotes.map((note) => (
@@ -1439,11 +1441,11 @@ function GuidedWorkout({
           </label>
 
           <label className="mt-5 block text-sm font-black text-stone-700">
-            Optional note
+            Anything to remember?
             <textarea
               className="mt-2 min-h-28 w-full rounded-lg border border-stone-200 p-3 text-base font-medium"
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Anything to remember for next time?"
+              placeholder="Energy, confidence, a weight that felt right, or anything you want next-you to know."
               value={notes}
             />
           </label>
@@ -1455,7 +1457,7 @@ function GuidedWorkout({
           onClick={saveWorkout}
           type="button"
         >
-          {isSaving ? "Saving..." : "Save workout"}
+          {isSaving ? "Saving..." : "Finish and save"}
         </button>
       </section>
     );
@@ -1477,8 +1479,8 @@ function GuidedWorkout({
             Stop this exercise for today.
           </h1>
           <p className="mt-2 leading-7 text-stone-600">
-            Sharp pain is a stop signal. We&apos;ll remember this and make the
-            next suggestion gentler.
+            Sharp pain is a stop signal. We&apos;ll flag it, back off next time,
+            and keep the rest of today simple.
           </p>
         </header>
 
@@ -1537,8 +1539,8 @@ function GuidedWorkout({
             Good data. We&apos;ll back this off.
           </h1>
           <p className="mt-2 leading-7 text-stone-600">
-            Stop the remaining sets for this exercise. Next time the coach will
-            suggest a gentler target.
+            You do not need to force the remaining sets. I&apos;ll make the next
+            suggestion gentler and keep the useful data.
           </p>
         </header>
 
@@ -1591,7 +1593,7 @@ function GuidedWorkout({
             {formatRestTime(restRemaining)}
           </h1>
           <p className="mt-2 leading-7 text-stone-600">
-            Breathe, shake out your hands, and get ready for the next movement.
+            Breathe, loosen up, and get ready for one clear next step.
           </p>
         </header>
         <article className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
@@ -1602,13 +1604,18 @@ function GuidedWorkout({
             {previewExercise?.name ?? "Finish"}
           </h2>
           <p className="mt-2 font-bold text-stone-500">{previewSets}</p>
+          {previewExercise?.coachingCues?.[0] && (
+            <p className="mt-3 rounded-lg bg-stone-100 p-3 text-sm font-bold leading-6 text-stone-700">
+              Coach cue: {previewExercise.coachingCues[0]}
+            </p>
+          )}
         </article>
         <button
           className="min-h-12 rounded-lg bg-emerald-900 px-4 font-black text-white"
           onClick={continueAfterRest}
           type="button"
         >
-          Continue
+          I&apos;m ready
         </button>
         <button
           className="min-h-12 rounded-lg bg-stone-200 px-4 font-black text-stone-700"
@@ -1625,16 +1632,23 @@ function GuidedWorkout({
     <section className="flex flex-1 flex-col gap-5">
       <header>
         <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
-          Exercise {exerciseIndex + 1} of {plannedExercises.length} · set{" "}
-          {Math.min(setIndex + 1, totalSets)} of {totalSets} · {context}
+          {template.dayLabel} · {context}
         </p>
-        <h1 className="mt-2 text-4xl font-black leading-tight">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200">
+          <div
+            className="h-full rounded-full bg-emerald-900 transition-all"
+            style={{ width: `${Math.max(progressPercent, 8)}%` }}
+          />
+        </div>
+        <h1 className="mt-3 text-4xl font-black leading-tight">
           {exercise?.name ?? "Exercise"}
         </h1>
-        <p className="mt-2 text-stone-600">
-          Aim for {plannedExercise?.repRange.min}-
-          {plannedExercise?.repRange.max} reps. Rest{" "}
-          {plannedExercise?.restSeconds}s after this exercise.
+        <p className="mt-2 text-lg font-bold leading-7 text-stone-800">
+          {leadInstruction}
+        </p>
+        <p className="mt-2 text-sm font-bold text-stone-500">
+          Exercise {exerciseIndex + 1} of {plannedExercises.length} · set{" "}
+          {Math.min(setIndex + 1, totalSets)} of {totalSets}
         </p>
         {plannedExercise?.substitutedFrom && (
           <p className="mt-3 rounded-lg bg-orange-50 p-3 text-sm font-black leading-6 text-orange-950">
@@ -1645,9 +1659,9 @@ function GuidedWorkout({
       </header>
 
       <article className="space-y-5 rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-        <div>
+        <div className="rounded-lg bg-emerald-50 p-4">
           <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-            Suggested today
+            Today&apos;s target
           </p>
           <p className="mt-2 text-lg font-black text-stone-900">
             {suggestedWeight
@@ -1668,9 +1682,33 @@ function GuidedWorkout({
             )}
         </div>
 
+        {exercise && guideIntroFrame && (
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+                Quick visual check
+              </p>
+              <button
+                className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-950"
+                onClick={() => setGuideExercise(exercise)}
+                type="button"
+              >
+                Open step guide
+              </button>
+            </div>
+            <div className="mt-2 overflow-hidden rounded-lg border border-stone-200 bg-stone-50">
+              <ExerciseGuideMedia
+                exercise={exercise}
+                frame={guideIntroFrame}
+                frameIndex={0}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm font-black text-stone-700">
-            Actual reps
+            Reps you did
             <input
               className="mt-2 min-h-14 w-full rounded-lg border border-stone-200 px-3 text-center text-2xl font-black"
               inputMode="numeric"
@@ -1690,7 +1728,7 @@ function GuidedWorkout({
 
         <div>
           <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-            How did the set feel?
+            How did that feel?
           </p>
           <div className="mt-2 grid grid-cols-3 gap-2">
             {effortOptions.map((option) => (
@@ -1713,7 +1751,7 @@ function GuidedWorkout({
         {loggedSets.length > 0 && (
           <div>
             <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-              Logged so far
+              What you&apos;ve already done
             </p>
             <div className="mt-2 grid gap-2">
               {loggedSets.map((set) => (
@@ -1733,30 +1771,8 @@ function GuidedWorkout({
         )}
 
         <div>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-              How to do it
-            </p>
-            {exercise && (
-              <button
-                className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-950"
-                onClick={() => setGuideExercise(exercise)}
-                type="button"
-              >
-                View guide
-              </button>
-            )}
-          </div>
-          <p className="mt-2 text-lg font-bold leading-7 text-stone-800">
-            {exercise?.executionSteps[0] ??
-              plannedExercise?.notes ??
-              "Move with control and stop if anything hurts."}
-          </p>
-        </div>
-
-        <div>
           <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-            Coach cues
+            Focus on these cues
           </p>
           <ul className="mt-2 grid gap-2">
             {(exercise?.coachingCues ?? []).slice(0, 3).map((cue) => (
@@ -1772,7 +1788,7 @@ function GuidedWorkout({
 
         <div className="rounded-lg bg-emerald-50 p-4">
           <p className="text-sm font-black uppercase tracking-wide text-emerald-950">
-            Easier option
+            If this feels too much
           </p>
           <p className="mt-1 font-bold leading-6 text-emerald-950">
             {getVariationName(exercise?.easierVariation) ??
@@ -1783,12 +1799,22 @@ function GuidedWorkout({
 
         <div className="rounded-lg bg-orange-50 p-4">
           <p className="text-sm font-black uppercase tracking-wide text-orange-950">
-            Safety note
+            Stop if
           </p>
           <p className="mt-1 font-bold leading-6 text-orange-950">
             {exercise?.safetyNotes?.[0] ?? "Stop if you feel sharp pain."}
           </p>
         </div>
+
+        {latestLoggedSet && (
+          <p className="rounded-lg bg-stone-100 p-4 text-sm font-bold leading-6 text-stone-700">
+            Last set: {latestLoggedSet.actualReps} reps
+            {latestLoggedSet.actualWeight
+              ? ` at ${latestLoggedSet.actualWeight}${latestLoggedSet.unit}`
+              : ""}{" "}
+            and it felt {effortLabel(latestLoggedSet.effort).toLowerCase()}.
+          </p>
+        )}
       </article>
 
       <div className="grid gap-3">
@@ -1797,7 +1823,7 @@ function GuidedWorkout({
           onClick={saveSet}
           type="button"
         >
-          Save set
+          Done set
         </button>
         <div className="grid grid-cols-3 gap-2">
           <button
