@@ -6,6 +6,10 @@ const APP_SHELL = [
   `${BASE_PATH}manifest.webmanifest`,
   `${BASE_PATH}icon.svg`,
   `${BASE_PATH}assets/fitness-coach-hero.png`,
+  `${BASE_PATH}assets/exercise-guides/glute-bridge.jpg`,
+  `${BASE_PATH}assets/exercise-guides/goblet-squat.jpg`,
+  `${BASE_PATH}assets/exercise-guides/incline-push-up.jpg`,
+  `${BASE_PATH}assets/exercise-guides/romanian-deadlift.jpg`,
 ];
 
 self.addEventListener("install", (event) => {

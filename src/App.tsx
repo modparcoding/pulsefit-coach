@@ -3376,16 +3376,26 @@ function ExerciseGuideOverlay({
         </header>
 
         <button
-          className="w-full rounded-lg border border-stone-200 bg-stone-50 p-4 text-left"
+          className="w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 text-left"
           onClick={nextFrame}
           type="button"
         >
-          <ExerciseGuideFocusCard
-            exercise={exercise}
-            frame={frame}
-            frameIndex={frameIndex}
-          />
-          <span className="mt-4 block border-t border-stone-200 pt-3 text-center text-xs font-black uppercase tracking-wide text-stone-500">
+          {exerciseGuideImageUrl(exercise.id) ? (
+            <ExerciseGuideMedia
+              exercise={exercise}
+              frame={frame}
+              frameIndex={frameIndex}
+            />
+          ) : (
+            <div className="p-4">
+              <ExerciseGuideFocusCard
+                exercise={exercise}
+                frame={frame}
+                frameIndex={frameIndex}
+              />
+            </div>
+          )}
+          <span className="block border-t border-stone-200 bg-white p-3 text-center text-xs font-black uppercase tracking-wide text-stone-500">
             Tap for next step
           </span>
         </button>
@@ -3496,6 +3506,40 @@ function ExerciseGuideFocusCard({
   );
 }
 
+function ExerciseGuideMedia({
+  exercise,
+  frame,
+  frameIndex,
+}: {
+  exercise: Exercise;
+  frame: ExerciseGuideFrame;
+  frameIndex: number;
+}) {
+  const imageUrl = exerciseGuideImageUrl(exercise.id);
+  if (!imageUrl) return null;
+
+  return (
+    <div className="bg-white">
+      <div
+        aria-label={`${exercise.name} ${frame.title}`}
+        className="aspect-[2/3] w-full bg-stone-100 bg-no-repeat sm:aspect-[3/4]"
+        role="img"
+        style={{
+          backgroundImage: `url(${imageUrl})`,
+          backgroundPosition: `${frameIndex * 50}% center`,
+          backgroundSize: "300% 100%",
+        }}
+      />
+      <div className="space-y-1 border-t border-stone-200 p-4">
+        <p className="text-xs font-black uppercase tracking-wide text-orange-600">
+          {frame.focus}
+        </p>
+        <p className="font-bold leading-6 text-stone-800">{frame.title}</p>
+      </div>
+    </div>
+  );
+}
+
 function buildExerciseGuideFrames(exercise: Exercise): ExerciseGuideFrame[] {
   const setup = exercise.setupSteps.slice(0, 2).join(" ");
   const movement = exercise.executionSteps.slice(0, 2).join(" ");
@@ -3547,6 +3591,20 @@ function guidePatternLabel(pattern: MovementPattern): string {
   };
 
   return labels[pattern];
+}
+
+function exerciseGuideImageUrl(exerciseId: string): string | null {
+  const imageMap: Record<string, string> = {
+    "glute-bridge": "glute-bridge.jpg",
+    "goblet-squat": "goblet-squat.jpg",
+    "incline-push-up": "incline-push-up.jpg",
+    "romanian-deadlift": "romanian-deadlift.jpg",
+  };
+  const fileName = imageMap[exerciseId];
+
+  return fileName
+    ? `${import.meta.env.BASE_URL}assets/exercise-guides/${fileName}`
+    : null;
 }
 
 function guideFocusLabels(
