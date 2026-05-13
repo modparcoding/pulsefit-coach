@@ -672,6 +672,7 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
   const [activeWorkout, setActiveWorkout] = useState(false);
   const [savedDraft, setSavedDraft] = useState<WorkoutDraft | null>(null);
   const [preferEasierSession, setPreferEasierSession] = useState(false);
+  const [guideExercise, setGuideExercise] = useState<Exercise | null>(null);
   const canResumeDraft =
     Boolean(template) &&
     savedDraft?.userId === profile.id &&
@@ -839,6 +840,15 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
                       {exercise.coachingCues[0]}
                     </p>
                   )}
+                  {exercise && (
+                    <button
+                      className="mt-3 min-h-10 w-full rounded-lg bg-emerald-50 px-3 text-sm font-black text-emerald-950"
+                      onClick={() => setGuideExercise(exercise)}
+                      type="button"
+                    >
+                      View guide
+                    </button>
+                  )}
                 </article>
               );
             }),
@@ -896,6 +906,12 @@ function TodayScreen({ profile }: { profile: UserProfile }) {
           );
         })}
       </section>
+      {guideExercise && (
+        <ExerciseGuideOverlay
+          exercise={guideExercise}
+          onClose={() => setGuideExercise(null)}
+        />
+      )}
     </section>
   );
 }
@@ -962,6 +978,7 @@ function GuidedWorkout({
   const [draftLoaded, setDraftLoaded] = useState(false);
   const [restRemaining, setRestRemaining] = useState(60);
   const [restMode, setRestMode] = useState<"set" | "exercise">("exercise");
+  const [guideExercise, setGuideExercise] = useState<Exercise | null>(null);
   const plannedExercise = plannedExercises[exerciseIndex];
   const exercise = plannedExercise
     ? getExercise(plannedExercise.exerciseId)
@@ -1716,9 +1733,20 @@ function GuidedWorkout({
         )}
 
         <div>
-          <p className="text-sm font-black uppercase tracking-wide text-stone-500">
-            How to do it
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+              How to do it
+            </p>
+            {exercise && (
+              <button
+                className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-950"
+                onClick={() => setGuideExercise(exercise)}
+                type="button"
+              >
+                View guide
+              </button>
+            )}
+          </div>
           <p className="mt-2 text-lg font-bold leading-7 text-stone-800">
             {exercise?.executionSteps[0] ??
               plannedExercise?.notes ??
@@ -1795,6 +1823,12 @@ function GuidedWorkout({
           </button>
         </div>
       </div>
+      {guideExercise && (
+        <ExerciseGuideOverlay
+          exercise={guideExercise}
+          onClose={() => setGuideExercise(null)}
+        />
+      )}
     </section>
   );
 }
@@ -3207,6 +3241,8 @@ function ExerciseDetailPanel({
   onClose: () => void;
   onStartQuickWorkout?: (exercise: Exercise) => void;
 }) {
+  const [showGuide, setShowGuide] = useState(false);
+
   return (
     <section className="fixed inset-0 z-20 overflow-y-auto bg-stone-950/35 px-4 py-6">
       <article className="mx-auto max-w-md space-y-5 rounded-lg bg-white p-5 shadow-xl">
@@ -3240,6 +3276,14 @@ function ExerciseDetailPanel({
             Start quick session
           </button>
         )}
+
+        <button
+          className="min-h-12 w-full rounded-lg bg-emerald-50 px-4 font-black text-emerald-950"
+          onClick={() => setShowGuide(true)}
+          type="button"
+        >
+          View exercise guide
+        </button>
 
         {lastResult && (
           <div className="rounded-lg bg-emerald-50 p-4">
@@ -3278,8 +3322,434 @@ function ExerciseDetailPanel({
           </div>
         ) : null}
       </article>
+      {showGuide && (
+        <ExerciseGuideOverlay
+          exercise={exercise}
+          onClose={() => setShowGuide(false)}
+        />
+      )}
     </section>
   );
+}
+
+type ExerciseGuideFrame = {
+  cue: string;
+  instruction: string;
+  title: string;
+};
+
+function ExerciseGuideOverlay({
+  exercise,
+  onClose,
+}: {
+  exercise: Exercise;
+  onClose: () => void;
+}) {
+  const frames = useMemo(() => buildExerciseGuideFrames(exercise), [exercise]);
+  const [frameIndex, setFrameIndex] = useState(0);
+  const frame = frames[frameIndex];
+  const nextFrame = () =>
+    setFrameIndex((current) => (current + 1) % frames.length);
+  const previousFrame = () =>
+    setFrameIndex((current) =>
+      current === 0 ? frames.length - 1 : current - 1,
+    );
+
+  return (
+    <section className="fixed inset-0 z-30 overflow-y-auto bg-stone-950/55 px-4 py-6">
+      <article className="mx-auto max-w-md space-y-4 rounded-lg bg-white p-5 shadow-xl">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-wider text-orange-600">
+              Exercise guide
+            </p>
+            <h2 className="mt-1 text-3xl font-black">{exercise.name}</h2>
+          </div>
+          <button
+            className="min-h-10 rounded-lg bg-stone-100 px-3 font-black text-stone-600"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
+        </header>
+
+        <button
+          className="w-full overflow-hidden rounded-lg border border-stone-200 bg-stone-50 text-left"
+          onClick={nextFrame}
+          type="button"
+        >
+          <ExerciseGuideImage exercise={exercise} frameIndex={frameIndex} />
+          <span className="block border-t border-stone-200 bg-white p-3 text-center text-xs font-black uppercase tracking-wide text-stone-500">
+            Tap image for next step
+          </span>
+        </button>
+
+        <div className="rounded-lg bg-emerald-50 p-4">
+          <p className="text-sm font-black uppercase tracking-wide text-emerald-950">
+            Step {frameIndex + 1} of {frames.length}
+          </p>
+          <h3 className="mt-1 text-xl font-black text-emerald-950">
+            {frame.title}
+          </h3>
+          <p className="mt-2 font-bold leading-7 text-emerald-950">
+            {frame.instruction}
+          </p>
+        </div>
+
+        <div className="rounded-lg bg-stone-100 p-4">
+          <p className="text-sm font-black uppercase tracking-wide text-stone-500">
+            Coach cue
+          </p>
+          <p className="mt-1 font-bold leading-6 text-stone-800">{frame.cue}</p>
+        </div>
+
+        {exercise.safetyNotes?.[0] && (
+          <div className="rounded-lg bg-orange-50 p-4">
+            <p className="text-sm font-black uppercase tracking-wide text-orange-950">
+              Safety
+            </p>
+            <p className="mt-1 font-bold leading-6 text-orange-950">
+              {exercise.safetyNotes[0]}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <button
+            className="min-h-12 rounded-lg bg-stone-200 px-4 font-black text-stone-700"
+            onClick={previousFrame}
+            type="button"
+          >
+            Back
+          </button>
+          <div className="flex gap-1">
+            {frames.map((item, index) => (
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  frameIndex === index ? "bg-emerald-900" : "bg-stone-300"
+                }`}
+                key={item.title}
+              />
+            ))}
+          </div>
+          <button
+            className="min-h-12 rounded-lg bg-emerald-900 px-4 font-black text-white"
+            onClick={nextFrame}
+            type="button"
+          >
+            Next
+          </button>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+function ExerciseGuideImage({
+  exercise,
+  frameIndex,
+}: {
+  exercise: Exercise;
+  frameIndex: number;
+}) {
+  const pose = guidePoseFor(exercise.movementPattern, frameIndex);
+  const hasHandWeight =
+    exercise.equipment.includes("dumbbells") ||
+    exercise.equipment.includes("kettlebell");
+
+  return (
+    <svg
+      aria-label={`${exercise.name} visual step ${frameIndex + 1}`}
+      className="block h-64 w-full"
+      role="img"
+      viewBox="0 0 240 170"
+    >
+      <rect fill="#f7f3ec" height="170" width="240" />
+      <path
+        d="M24 142 H216"
+        stroke="#d6cec1"
+        strokeLinecap="round"
+        strokeWidth="5"
+      />
+      <circle cx="196" cy="34" fill="#fb923c" opacity="0.18" r="18" />
+      <path
+        d={`M${pose.shoulderX} ${pose.shoulderY} L${pose.hipX} ${pose.hipY}`}
+        stroke="#14532d"
+        strokeLinecap="round"
+        strokeWidth="9"
+      />
+      <circle cx={pose.headX} cy={pose.headY} fill="#14532d" r="13" />
+      <path
+        d={`M${pose.shoulderX} ${pose.shoulderY + 6} L${pose.leftHandX} ${pose.leftHandY}`}
+        stroke="#14532d"
+        strokeLinecap="round"
+        strokeWidth="7"
+      />
+      <path
+        d={`M${pose.shoulderX} ${pose.shoulderY + 6} L${pose.rightHandX} ${pose.rightHandY}`}
+        stroke="#14532d"
+        strokeLinecap="round"
+        strokeWidth="7"
+      />
+      <path
+        d={`M${pose.hipX} ${pose.hipY} L${pose.leftKneeX} ${pose.leftKneeY} L${pose.leftFootX} ${pose.leftFootY}`}
+        fill="none"
+        stroke="#14532d"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="8"
+      />
+      <path
+        d={`M${pose.hipX} ${pose.hipY} L${pose.rightKneeX} ${pose.rightKneeY} L${pose.rightFootX} ${pose.rightFootY}`}
+        fill="none"
+        stroke="#14532d"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="8"
+      />
+      {hasHandWeight && (
+        <g>
+          <rect
+            fill="#f97316"
+            height="18"
+            rx="4"
+            width="28"
+            x={pose.weightX}
+            y={pose.weightY}
+          />
+          <path
+            d={`M${pose.weightX - 5} ${pose.weightY + 9} H${pose.weightX + 33}`}
+            stroke="#9a3412"
+            strokeLinecap="round"
+            strokeWidth="3"
+          />
+        </g>
+      )}
+      {exercise.equipment.includes("bench") && (
+        <g>
+          <rect fill="#a8a29e" height="10" rx="3" width="92" x="70" y="126" />
+          <path
+            d="M82 136 V146 M150 136 V146"
+            stroke="#78716c"
+            strokeWidth="4"
+          />
+        </g>
+      )}
+      <path
+        d={pose.arrowPath}
+        fill="none"
+        stroke="#f97316"
+        strokeDasharray="5 5"
+        strokeLinecap="round"
+        strokeWidth="4"
+      />
+      <text
+        fill="#57534e"
+        fontFamily="Inter, system-ui, sans-serif"
+        fontSize="12"
+        fontWeight="800"
+        x="18"
+        y="25"
+      >
+        {frameIndex === 0 ? "Set up" : frameIndex === 1 ? "Move" : "Finish"}
+      </text>
+    </svg>
+  );
+}
+
+function buildExerciseGuideFrames(exercise: Exercise): ExerciseGuideFrame[] {
+  const setup = exercise.setupSteps.slice(0, 2).join(" ");
+  const movement = exercise.executionSteps.slice(0, 2).join(" ");
+  const finish =
+    exercise.executionSteps.slice(2, 4).join(" ") ||
+    exercise.coachingCues.slice(0, 2).join(" ");
+
+  return [
+    {
+      title: "Set your position",
+      instruction: setup || "Get into a steady start position.",
+      cue: exercise.coachingCues[0] ?? "Move slowly and stay in control.",
+    },
+    {
+      title: "Make the main movement",
+      instruction: movement || "Move through the rep with control.",
+      cue:
+        exercise.coachingCues[1] ??
+        exercise.coachingCues[0] ??
+        "Keep breathing.",
+    },
+    {
+      title: "Finish cleanly",
+      instruction: finish || "Return to the start position with good form.",
+      cue:
+        exercise.coachingCues[2] ??
+        exercise.coachingCues[0] ??
+        "Stop if anything feels sharp or wrong.",
+    },
+  ];
+}
+
+function guidePoseFor(
+  pattern: MovementPattern,
+  frameIndex: number,
+): {
+  arrowPath: string;
+  headX: number;
+  headY: number;
+  hipX: number;
+  hipY: number;
+  leftFootX: number;
+  leftFootY: number;
+  leftHandX: number;
+  leftHandY: number;
+  leftKneeX: number;
+  leftKneeY: number;
+  rightFootX: number;
+  rightFootY: number;
+  rightHandX: number;
+  rightHandY: number;
+  rightKneeX: number;
+  rightKneeY: number;
+  shoulderX: number;
+  shoulderY: number;
+  weightX: number;
+  weightY: number;
+} {
+  const deep = frameIndex === 1;
+  const finish = frameIndex === 2;
+
+  if (
+    pattern === "push_horizontal" ||
+    pattern === "core" ||
+    pattern === "mobility"
+  ) {
+    return {
+      arrowPath: deep ? "M72 98 C100 116, 132 116, 164 98" : "M74 92 H164",
+      headX: finish ? 70 : 62,
+      headY: deep ? 76 : 68,
+      shoulderX: finish ? 88 : 82,
+      shoulderY: deep ? 89 : 82,
+      hipX: finish ? 134 : 132,
+      hipY: deep ? 101 : 92,
+      leftHandX: 82,
+      leftHandY: 128,
+      rightHandX: 108,
+      rightHandY: 128,
+      leftKneeX: finish ? 150 : 160,
+      leftKneeY: 124,
+      leftFootX: 178,
+      leftFootY: 136,
+      rightKneeX: 158,
+      rightKneeY: 112,
+      rightFootX: 196,
+      rightFootY: 132,
+      weightX: 94,
+      weightY: 82,
+    };
+  }
+
+  if (pattern === "hinge") {
+    return {
+      arrowPath: deep ? "M106 68 C126 82, 142 100, 150 122" : "M116 54 V112",
+      headX: deep ? 88 : 112,
+      headY: deep ? 49 : 35,
+      shoulderX: deep ? 104 : 118,
+      shoulderY: deep ? 66 : 56,
+      hipX: 132,
+      hipY: deep ? 92 : 88,
+      leftHandX: deep ? 120 : 106,
+      leftHandY: deep ? 116 : 88,
+      rightHandX: deep ? 146 : 134,
+      rightHandY: deep ? 116 : 88,
+      leftKneeX: 116,
+      leftKneeY: 116,
+      leftFootX: 96,
+      leftFootY: 142,
+      rightKneeX: 150,
+      rightKneeY: 116,
+      rightFootX: 170,
+      rightFootY: 142,
+      weightX: deep ? 120 : 106,
+      weightY: deep ? 112 : 84,
+    };
+  }
+
+  if (pattern === "lunge") {
+    return {
+      arrowPath: deep ? "M120 54 C108 76, 100 94, 96 116" : "M96 46 V112",
+      headX: 120,
+      headY: deep ? 34 : 30,
+      shoulderX: 120,
+      shoulderY: deep ? 56 : 50,
+      hipX: 118,
+      hipY: deep ? 88 : 82,
+      leftHandX: 102,
+      leftHandY: deep ? 88 : 80,
+      rightHandX: 138,
+      rightHandY: deep ? 88 : 80,
+      leftKneeX: deep ? 86 : 102,
+      leftKneeY: deep ? 112 : 108,
+      leftFootX: deep ? 60 : 88,
+      leftFootY: 142,
+      rightKneeX: deep ? 150 : 138,
+      rightKneeY: deep ? 112 : 108,
+      rightFootX: deep ? 178 : 162,
+      rightFootY: 142,
+      weightX: 106,
+      weightY: deep ? 84 : 76,
+    };
+  }
+
+  if (pattern === "pull_horizontal" || pattern === "pull_vertical") {
+    return {
+      arrowPath: deep ? "M70 78 C96 58, 126 58, 154 78" : "M72 84 H156",
+      headX: 108,
+      headY: deep ? 38 : 34,
+      shoulderX: 112,
+      shoulderY: deep ? 62 : 55,
+      hipX: 128,
+      hipY: deep ? 94 : 86,
+      leftHandX: deep ? 72 : 86,
+      leftHandY: deep ? 70 : 92,
+      rightHandX: deep ? 152 : 146,
+      rightHandY: deep ? 70 : 92,
+      leftKneeX: 110,
+      leftKneeY: 116,
+      leftFootX: 90,
+      leftFootY: 142,
+      rightKneeX: 145,
+      rightKneeY: 116,
+      rightFootX: 166,
+      rightFootY: 142,
+      weightX: deep ? 56 : 72,
+      weightY: deep ? 62 : 88,
+    };
+  }
+
+  return {
+    arrowPath: deep ? "M120 48 C116 76, 116 96, 120 122" : "M120 42 V116",
+    headX: 120,
+    headY: deep ? 42 : 32,
+    shoulderX: 120,
+    shoulderY: deep ? 66 : 54,
+    hipX: 120,
+    hipY: deep ? 98 : 88,
+    leftHandX: deep ? 96 : 102,
+    leftHandY: deep ? 92 : 84,
+    rightHandX: deep ? 144 : 138,
+    rightHandY: deep ? 92 : 84,
+    leftKneeX: deep ? 94 : 104,
+    leftKneeY: deep ? 118 : 112,
+    leftFootX: deep ? 82 : 96,
+    leftFootY: 142,
+    rightKneeX: deep ? 146 : 136,
+    rightKneeY: deep ? 118 : 112,
+    rightFootX: deep ? 158 : 144,
+    rightFootY: 142,
+    weightX: 106,
+    weightY: deep ? 84 : 76,
+  };
 }
 
 function SessionDetailPanel({
